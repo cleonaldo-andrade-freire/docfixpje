@@ -37,7 +37,7 @@ test('gera todas as fixtures esperadas', () => {
 test('cada fixture tem o magic number do seu tipo', () => {
   const pdfs = Object.keys(fixtures).filter((n) => n.endsWith('.pdf') && n !== 'falso.pdf');
   for (const n of pdfs) {
-    expect(detectarTipo(fixtures[n]!.subarray(0, 2048)), n).toBe('application/pdf');
+    expect(detectarTipo(fixtures[n]!.subarray(0, 2048)), `magic de ${n}`).toBe('application/pdf');
   }
   expect(detectarTipo(fixtures['audio.mp3']!)).toBe('audio/mpeg');
   expect(detectarTipo(fixtures['audio-grande.mp3']!)).toBe('audio/mpeg');
