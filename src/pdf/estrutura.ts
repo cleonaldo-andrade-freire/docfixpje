@@ -45,7 +45,7 @@ export interface TrailerBruto {
 }
 
 /** Latin-1: cada byte vira uma code unit. Seguro para varrer sintaxe PDF. */
-function comoTexto(bytes: Uint8Array): string {
+export function comoTexto(bytes: Uint8Array): string {
   let s = '';
   const CHUNK = 0x8000;
   for (let i = 0; i < bytes.length; i += CHUNK) {
@@ -84,5 +84,68 @@ export function varrerTrailerBruto(bytes: Uint8Array): TrailerBruto {
     sigFlags,
     nomesCamposSig: nomes,
     camposSigComV: comV,
+  };
+}
+
+export interface EstruturaPdfa {
+  /** /OutputIntents com subtipo /GTS_PDFA1. */
+  temOutputIntentPdfa: boolean;
+  /** Algum /FontDescriptor sem /FontFile, /FontFile2 ou /FontFile3 próximo. */
+  fonteNaoEmbutida: boolean;
+  /** /JavaScript, /JS, /AA ou /OpenAction com script. */
+  temJavaScript: boolean;
+  /** /EmbeddedFiles no documento. */
+  temEmbeddedFiles: boolean;
+  /** Transparência: /SMask ≠ /None, /ca ou /CA < 1, ou /Group /S /Transparency. */
+  temTransparencia: boolean;
+  /** /Launch, /GoToR ou outra referência a recurso externo. */
+  temReferenciaExterna: boolean;
+}
+
+/**
+ * Verificações estruturais da Regra 3 nível 2 (spec §7.3), por varredura de
+ * bytes — sem DOM, roda no worker. É heurística, não auditoria ISO 19005.
+ */
+export function varrerEstruturaPdfa(bytes: Uint8Array): EstruturaPdfa {
+  const s = comoTexto(bytes);
+
+  const temOutputIntentPdfa = /\/OutputIntents\b/.test(s) && /\/GTS_PDFA1\b/.test(s);
+
+  // Só o dicionário de descritor tem "/Type /FontDescriptor"; a chave
+  // "/FontDescriptor N 0 R" dentro do dict de fonte é uma referência, não conta.
+  let fonteNaoEmbutida = false;
+  const reFd = /\/Type\s*\/FontDescriptor\b/g;
+  let fd: RegExpExecArray | null;
+  while ((fd = reFd.exec(s)) !== null) {
+    const janela = s.slice(fd.index, fd.index + 800);
+    if (!/\/FontFile[23]?\b/.test(janela)) {
+      fonteNaoEmbutida = true;
+      break;
+    }
+  }
+
+  const temJavaScript =
+    /\/JavaScript\b/.test(s) ||
+    /\/JS\s*[(<]/.test(s) ||
+    /\/AA\s*<</.test(s) ||
+    /\/OpenAction\b[\s\S]{0,160}?\/S\s*\/JavaScript\b/.test(s);
+
+  const temEmbeddedFiles = /\/EmbeddedFiles\b/.test(s);
+
+  const temTransparencia =
+    /\/SMask\s*(?!\/None\b)(?:\/|\d)/.test(s) ||
+    /\/ca\s+0?\.\d+/.test(s) ||
+    /\/CA\s+0?\.\d+/.test(s) ||
+    /\/Group\b[\s\S]{0,160}?\/S\s*\/Transparency\b/.test(s);
+
+  const temReferenciaExterna = /\/Launch\b/.test(s) || /\/GoToR\b/.test(s);
+
+  return {
+    temOutputIntentPdfa,
+    fonteNaoEmbutida,
+    temJavaScript,
+    temEmbeddedFiles,
+    temTransparencia,
+    temReferenciaExterna,
   };
 }
