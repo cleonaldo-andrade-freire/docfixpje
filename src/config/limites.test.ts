@@ -1,7 +1,8 @@
 import { LIMITES, PDFA } from './limites';
 
-test('limite de tamanho é exatamente 10 * 1024 * 1024', () => {
+test('limite de PDF é 10 * 1024 * 1024; limite de mídia é 200 * 1024 * 1024', () => {
   expect(LIMITES.TAMANHO_MAX_BYTES).toBe(10_485_760);
+  expect(LIMITES.TAMANHO_MAX_MIDIA_BYTES).toBe(200 * 1024 * 1024);
 });
 
 test('máximo de arquivos por lote é 20', () => {

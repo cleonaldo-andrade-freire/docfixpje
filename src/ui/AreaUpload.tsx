@@ -18,7 +18,7 @@ function novoId(): string {
 }
 
 function itemReprovadoPorTamanho(file: File): ItemArquivo {
-  const excedente = file.size - LIMITES.TAMANHO_MAX_BYTES;
+  const excedente = file.size - LIMITES.TAMANHO_ABSOLUTO_LEITURA_BYTES;
   return {
     id: novoId(),
     file,
@@ -40,9 +40,9 @@ function itemReprovadoPorTamanho(file: File): ItemArquivo {
         {
           codigo: 'TAMANHO_EXCEDIDO',
           gravidade: 'erro',
-          mensagem: `O arquivo tem ${formatarTamanho(file.size)} — ${formatarTamanho(excedente)} acima do limite. É grande demais para processar no navegador.`,
+          mensagem: `O arquivo tem ${formatarTamanho(file.size)} — ${formatarTamanho(excedente)} acima do teto de ${formatarTamanho(LIMITES.TAMANHO_ABSOLUTO_LEITURA_BYTES)}. É grande demais para processar no navegador.`,
           detalheTecnico: `${file.size} bytes; acima do teto absoluto de leitura (${LIMITES.TAMANHO_ABSOLUTO_LEITURA_BYTES} bytes)`,
-          orientacao: 'Divida o documento em partes menores antes de enviar.',
+          orientacao: 'Divida o arquivo em partes menores antes de enviar.',
           correcaoDisponivel: null,
         },
       ],

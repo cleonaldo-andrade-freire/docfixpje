@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import css from './BotaoValidar.module.css';
 
 /**
  * Botão Validar (spec §5, §14.2). Lista vazia: desabilitado com aria-disabled
@@ -17,7 +18,7 @@ export function BotaoValidar({
   const desabilitado = !habilitado || validando;
 
   return (
-    <div>
+    <div className={css.raiz}>
       <button
         type="button"
         onClick={onValidar}
@@ -28,7 +29,7 @@ export function BotaoValidar({
         {validando ? 'Validando…' : 'Validar'}
       </button>
       {!habilitado && (
-        <span id={dicaId} role="note">
+        <span id={dicaId} className={css.dica} role="note">
           Adicione ao menos um arquivo para validar.
         </span>
       )}

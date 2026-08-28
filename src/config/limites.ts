@@ -4,14 +4,17 @@
  */
 
 export const LIMITES = {
-  /** Teto de tamanho por arquivo. Os tribunais divergem; alterar só aqui. (spec §7.2) */
+  /** Teto de tamanho para PDF. Os tribunais divergem; alterar só aqui. (spec §7.2) */
   TAMANHO_MAX_BYTES: 10 * 1024 * 1024,
 
+  /** Teto de tamanho para MP3/MP4 (áudio/vídeo de audiências são grandes). */
+  TAMANHO_MAX_MIDIA_BYTES: 200 * 1024 * 1024,
+
   /**
-   * Acima disto a ferramenta recusa sem sequer ler os bytes — um arquivo desse
-   * porte reprova por tamanho de qualquer forma (spec §10.2).
+   * Acima disto a ferramenta recusa sem sequer ler os bytes — nem a mídia
+   * ultrapassa isso (spec §10.2).
    */
-  TAMANHO_ABSOLUTO_LEITURA_BYTES: 100 * 1024 * 1024,
+  TAMANHO_ABSOLUTO_LEITURA_BYTES: 200 * 1024 * 1024,
 
   /** Máximo de arquivos aceitos por lote (auto-DoS do navegador, spec §10.2). */
   MAX_ARQUIVOS_LOTE: 20,
@@ -54,8 +57,8 @@ export const COMPRESSAO_TENTATIVAS: readonly NivelCompressao[] = [
 export const DPI_AVISO_RESOLUCAO = 100;
 
 /**
- * Endereço oficial da ferramenta, exibido na interface (spec §10.4). Editável
- * só aqui. Ajustar quando o domínio de produção for definido.
+ * Endereço oficial da ferramenta (spec §10.4). Hoje não é exibido na interface;
+ * mantido para um eventual link de rodapé / metadado. Ajustar no deploy.
  */
 export const ENDERECO_OFICIAL = 'https://validador-pje.exemplo.br';
 

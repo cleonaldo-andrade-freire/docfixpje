@@ -75,10 +75,12 @@ describe('spec §14.1', () => {
     }
   });
 
-  test('MP4 grande -> reprovado só por tamanho', async () => {
-    const r = await val('video-grande.mp4');
-    expect(cod(r)).toEqual(['TAMANHO_EXCEDIDO']);
-    expect(r.ocorrencias[0]!.correcaoDisponivel).toBeNull();
+  test('MP4/MP3 de dezenas de MB -> apto (limite de mídia é 200 MB, não 10)', async () => {
+    for (const nome of ['video-grande.mp4', 'audio-grande.mp3']) {
+      const r = await val(nome);
+      expect(r.apto, nome).toBe(true);
+      expect(cod(r), nome).toEqual([]);
+    }
   });
 
   test('PDF/A-1b -> apto, pdfaParte 1, conformidade B, sem ocorrências', async () => {

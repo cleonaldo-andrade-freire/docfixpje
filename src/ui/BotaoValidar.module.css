@@ -1,0 +1,10 @@
+.raiz {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dica {
+  color: var(--cor-texto-3);
+  font-size: 0.8125rem;
+}

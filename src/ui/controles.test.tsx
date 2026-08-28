@@ -4,7 +4,6 @@ import { expect, test, vi } from 'vitest';
 import { BotaoValidar } from './BotaoValidar';
 import { ControlesDescarte } from './ControlesDescarte';
 import { AvisoPrivacidade } from './AvisoPrivacidade';
-import { ENDERECO_OFICIAL } from '../config/limites';
 
 test('BotaoValidar: lista vazia -> aria-disabled e rótulo explicativo associado', () => {
   render(<BotaoValidar habilitado={false} validando={false} onValidar={() => {}} />);
@@ -44,9 +43,8 @@ test('ControlesDescarte: ocioso mostra o banner com o texto exato', () => {
   expect(screen.getByText('Os arquivos foram descartados por inatividade.')).toBeInTheDocument();
 });
 
-test('AvisoPrivacidade: frase de privacidade + endereço oficial, sem "apagamento seguro"', () => {
+test('AvisoPrivacidade: frase de privacidade, sem "apagamento seguro"', () => {
   render(<AvisoPrivacidade />);
   expect(screen.getByText(/só na memória deste navegador/i)).toBeInTheDocument();
-  expect(screen.getByText(ENDERECO_OFICIAL)).toBeInTheDocument();
   expect(screen.queryByText(/apagamento seguro|apaga com segurança/i)).not.toBeInTheDocument();
 });

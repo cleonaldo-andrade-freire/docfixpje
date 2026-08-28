@@ -1,7 +1,7 @@
 .raiz {
   display: flex;
   gap: 10px;
-  align-items: flex-start;
+  align-items: center;
   padding: 12px 14px;
   background: var(--cor-superficie);
   border: 1px solid var(--cor-borda);
@@ -11,13 +11,6 @@
 .icone {
   flex-shrink: 0;
   color: var(--cor-ok);
-  margin-top: 1px;
-}
-
-.texto {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
 }
 
 .frase {
@@ -25,14 +18,4 @@
   font-weight: 560;
   font-size: 0.8125rem;
   color: var(--cor-texto);
-}
-
-.endereco {
-  margin: 0;
-  font-size: 0.75rem;
-  color: var(--cor-texto-3);
-}
-.endereco strong {
-  color: var(--cor-texto-2);
-  font-weight: 600;
 }

@@ -1,9 +1,8 @@
-import { ENDERECO_OFICIAL } from '../config/limites';
 import css from './AvisoPrivacidade.module.css';
 
 /**
- * Declaração de privacidade curta e verificável (spec §9.6, §11) e endereço
- * oficial da ferramenta (spec §10.4). Não promete "apagamento seguro".
+ * Declaração de privacidade curta e verificável (spec §9.6, §11).
+ * Não promete "apagamento seguro".
  */
 export function AvisoPrivacidade() {
   return (
@@ -23,15 +22,10 @@ export function AvisoPrivacidade() {
         <path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z" />
         <path d="M9 12l2 2 4-4" />
       </svg>
-      <div className={css.texto}>
-        <p className={css.frase}>
-          Seus arquivos ficam só na memória deste navegador. Nada é enviado para nenhum
-          servidor e tudo some ao fechar a aba.
-        </p>
-        <p className={css.endereco}>
-          Endereço oficial: <strong>{ENDERECO_OFICIAL}</strong>
-        </p>
-      </div>
+      <p className={css.frase}>
+        Seus arquivos ficam só na memória deste navegador. Nada é enviado para nenhum
+        servidor e tudo some ao fechar a aba.
+      </p>
     </aside>
   );
 }

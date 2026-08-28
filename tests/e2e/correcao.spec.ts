@@ -45,10 +45,10 @@ test('PDF assinado E criptografado → Tentar corrigir → corrigido (motor de t
   await expect(linha.getByText('Corrigido — revalidado com sucesso')).toBeVisible({ timeout: 15_000 });
 });
 
-test('MP4 acima do limite → sem correção automática, só orientação (decisão P2-1)', async ({ page }) => {
+test('MP4 de dezenas de MB → apto (limite de mídia é 200 MB, não 10)', async ({ page }) => {
   await validar(page, 'video-grande.mp4');
   const linha = page.getByRole('listitem', { name: 'video-grande.mp4' });
-  await expect(linha.getByText(/bitrate menor/i).first()).toBeVisible();
+  await expect(linha.getByText('Pronto para anexar ao PJe')).toBeVisible();
   await expect(linha.getByRole('button', { name: /tentar corrigir/i })).toHaveCount(0);
 });
 
