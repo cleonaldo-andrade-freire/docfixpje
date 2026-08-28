@@ -17,7 +17,7 @@ export interface CallbacksLote {
 export type FabricaWorker = () => Worker;
 
 const fabricaPadrao: FabricaWorker = () =>
-  new Worker(new URL('../workers/validacao.worker.ts', import.meta.url), { type: 'module' });
+  new Worker(new URL('../workers/pdf.worker.ts', import.meta.url), { type: 'module' });
 
 function resultadoCorrompido(nome: string, tamanhoBytes: number): ResultadoValidacao {
   return {

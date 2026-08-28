@@ -46,10 +46,32 @@ test('mostra badge, mensagem, orientação e detalhe técnico', () => {
   expect(screen.getByText('Detalhe técnico')).toBeInTheDocument();
 });
 
-test('Fase 1: não há botão "Tentar corrigir"; há a nota de próxima versão', () => {
-  render(<Diagnostico resultado={res([oc('ASSINATURA_PRESENTE')])} />);
+test('Diagnostico em si não renderiza botão de correção (fica na LinhaArquivo)', () => {
+  render(<Diagnostico resultado={res([oc('ASSINATURA_PRESENTE')])} estado="inapto" />);
   expect(screen.queryByRole('button', { name: /corrigir/i })).not.toBeInTheDocument();
-  expect(screen.getByText(/próxima versão/i)).toBeInTheDocument();
+  expect(screen.queryByText(/próxima versão/i)).not.toBeInTheDocument();
+});
+
+test('mostra avisos e tamanho após correção bem-sucedida', () => {
+  render(
+    <Diagnostico
+      resultado={res([oc('TAMANHO_EXCEDIDO', { correcaoDisponivel: 'COMPRIMIR_PDF' })])}
+      estado="corrigido"
+      resultadoCorrecao={{
+        tentada: true,
+        estrategias: ['COMPRIMIR_PDF', 'CONVERTER_PDFA'],
+        sucesso: true,
+        tamanhoAntes: 26_000_000,
+        tamanhoDepois: 9_000_000,
+        textoPreservado: true,
+        avisos: ['A resolução das imagens foi reduzida para caber no limite.'],
+        duracaoMs: 1200,
+        revalidacao: { apto: true, ocorrencias: [] },
+      }}
+    />,
+  );
+  expect(screen.getByText(/resolução das imagens foi reduzida/i)).toBeInTheDocument();
+  expect(screen.getByText(/26000000 → 9000000 bytes/)).toBeInTheDocument();
 });
 
 test('arquivo criptografado: orientação de remover proteção, sem nota de correção', () => {

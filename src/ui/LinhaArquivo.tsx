@@ -2,9 +2,13 @@ import type { ItemArquivo } from '../estado/store';
 import { formatarTamanho, tipoLegivel } from '../infra/formato';
 import { EstadoLinha } from './EstadoLinha';
 import { Diagnostico } from './Diagnostico';
+import { BotaoCorrigir } from './BotaoCorrigir';
 import css from './LinhaArquivo.module.css';
 
 function resumoOcorrencias(item: ItemArquivo): string | null {
+  // Nos estados de correção, o texto vem de TEXTO_ESTADO / da orientação, não
+  // do diagnóstico de validação antigo.
+  if (item.estado !== 'inapto') return null;
   const r = item.resultado;
   if (!r || r.apto) return null;
   const erros = r.ocorrencias.filter((o) => o.gravidade === 'erro');
@@ -16,9 +20,15 @@ function resumoOcorrencias(item: ItemArquivo): string | null {
 export function LinhaArquivo({
   item,
   onRemover,
+  onCorrigir,
+  onBaixarOriginal,
+  corrigindoOutro = false,
 }: {
   item: ItemArquivo;
   onRemover: (id: string) => void;
+  onCorrigir?: ((id: string) => void) | undefined;
+  onBaixarOriginal?: ((item: ItemArquivo) => void) | undefined;
+  corrigindoOutro?: boolean | undefined;
 }) {
   const emAtividade = item.estado === 'validando' || item.estado === 'corrigindo';
 
@@ -46,7 +56,20 @@ export function LinhaArquivo({
       </div>
       {item.resultado && (
         <div className={css.diagnostico}>
-          <Diagnostico resultado={item.resultado} />
+          <Diagnostico
+            resultado={item.resultado}
+            estado={item.estado}
+            resultadoCorrecao={item.resultadoCorrecao}
+            orientacaoCorrecao={item.orientacaoCorrecao}
+          />
+          {onCorrigir && onBaixarOriginal && (
+            <BotaoCorrigir
+              item={item}
+              desabilitado={corrigindoOutro}
+              onCorrigir={onCorrigir}
+              onBaixarOriginal={onBaixarOriginal}
+            />
+          )}
         </div>
       )}
     </li>

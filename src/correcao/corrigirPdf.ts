@@ -5,6 +5,9 @@ import type { MotorPdf } from './motor';
 import { argumentosGs, estrategiasDe } from './argumentosGs';
 import { revalidar } from './revalidar';
 import { textoPreservado } from './preservacaoTexto';
+import { nomeCorrigido } from './nomeCorrigido';
+
+export { nomeCorrigido };
 
 /**
  * Correção de PDF em UMA passada por tentativa (spec §8.1). Se precisa comprimir,
@@ -144,10 +147,4 @@ export async function corrigirPdf(params: {
       revalidacao,
     },
   };
-}
-
-/** `documento.pdf` -> `documento-corrigido.pdf` (spec §8.3.4). */
-export function nomeCorrigido(nome: string): string {
-  const i = nome.lastIndexOf('.');
-  return i === -1 ? `${nome}-corrigido` : `${nome.slice(0, i)}-corrigido${nome.slice(i)}`;
 }

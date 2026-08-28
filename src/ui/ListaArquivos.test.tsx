@@ -10,6 +10,8 @@ const item = (id: string, over: Partial<ItemArquivo> = {}): ItemArquivo => ({
   estado: 'aguardando',
   etapa: null,
   resultado: null,
+  resultadoCorrecao: null,
+  orientacaoCorrecao: null,
   correcao: null,
   ...over,
 });
@@ -52,8 +54,10 @@ test('linha com resultado inapto embute o diagnóstico', () => {
         }),
       ]}
       onRemover={() => {}}
+      onCorrigir={() => {}}
+      onBaixarOriginal={() => {}}
     />,
   );
   expect(screen.getByText('Detalhe técnico')).toBeInTheDocument();
-  expect(screen.getByText(/próxima versão/i)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /tentar corrigir/i })).toBeInTheDocument();
 });

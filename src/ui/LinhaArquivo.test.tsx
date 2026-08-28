@@ -12,6 +12,8 @@ const item = (over: Partial<ItemArquivo> = {}): ItemArquivo => ({
   estado: 'aguardando',
   etapa: null,
   resultado: null,
+  resultadoCorrecao: null,
+  orientacaoCorrecao: null,
   correcao: null,
   ...over,
 });

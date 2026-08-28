@@ -54,12 +54,32 @@ test('nenhum fetch() com URL absoluta externa', () => {
   }
 });
 
-test('orçamento de tamanho da Fase 1: JS+CSS < 400 KB gzip (spec §1.2)', () => {
-  let totalGz = 0;
-  for (const f of readdirSync(distAssets)) {
-    if (f.endsWith('.js') || f.endsWith('.css')) {
-      totalGz += gzipSync(readFileSync(join(distAssets, f))).length;
-    }
-  }
-  expect(totalGz).toBeLessThan(400 * 1024);
+const gz = (arquivo: string) => gzipSync(readFileSync(join(distAssets, arquivo))).length;
+
+test('chunk de entrada (main + css) enxuto: < 120 KB gzip (spec §1.2)', () => {
+  const arquivos = readdirSync(distAssets);
+  const entrada = arquivos.filter(
+    (f) => /^main-.*\.js$/.test(f) || /^main-.*\.css$/.test(f) || /^index-.*\.(js|css)$/.test(f),
+  );
+  expect(entrada.length).toBeGreaterThan(0);
+  const totalGz = entrada.reduce((n, f) => n + gz(f), 0);
+  expect(totalGz).toBeLessThan(120 * 1024);
+});
+
+test('total JS+CSS < 300 KB gzip — Fase 2 sem WASM (spec §14.5)', () => {
+  const totalGz = readdirSync(distAssets)
+    .filter((f) => f.endsWith('.js') || f.endsWith('.css'))
+    .reduce((n, f) => n + gz(f), 0);
+  expect(totalGz).toBeLessThan(300 * 1024);
+});
+
+test('o worker de PDF é chunk separado, não entra no index.html (spec §14.5)', () => {
+  const html = readFileSync(join(raiz, 'dist', 'index.html'), 'utf8');
+  expect(html).not.toMatch(/pdf\.worker/);
+  expect(readdirSync(distAssets).some((f) => /^pdf\.worker-.*\.js$/.test(f))).toBe(true);
+});
+
+test('nenhum .wasm no bundle da Fase 2 (motor real ainda não embarcado)', () => {
+  const wasm = readdirSync(distAssets).filter((f) => f.endsWith('.wasm'));
+  expect(wasm).toEqual([]);
 });

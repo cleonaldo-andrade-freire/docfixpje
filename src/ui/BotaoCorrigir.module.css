@@ -1,0 +1,36 @@
+.raiz {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.acao {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo-2);
+  color: var(--cor-texto);
+  cursor: pointer;
+  font-weight: 600;
+}
+.acao:hover:not(:disabled) {
+  background: var(--cor-neutro-fundo);
+}
+.acao:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.primario {
+  border-color: var(--cor-ok);
+  color: var(--cor-ok);
+  background: var(--cor-ok-fundo);
+}
+
+.link {
+  color: var(--cor-texto-2);
+  font-size: 0.9rem;
+  text-decoration: underline;
+}

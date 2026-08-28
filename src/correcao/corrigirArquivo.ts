@@ -38,7 +38,7 @@ const RESULTADO_VAZIO: ResultadoCorrecao = {
 };
 
 const fabricaPadrao: FabricaWorkerCorrecao = () =>
-  new Worker(new URL('../workers/correcao.worker.ts', import.meta.url), { type: 'module' });
+  new Worker(new URL('../workers/pdf.worker.ts', import.meta.url), { type: 'module' });
 
 export async function corrigirArquivo(params: {
   nomeArquivo: string;

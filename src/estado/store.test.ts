@@ -9,6 +9,8 @@ const item = (id: string): ItemArquivo => ({
   estado: 'aguardando',
   etapa: null,
   resultado: null,
+  resultadoCorrecao: null,
+  orientacaoCorrecao: null,
   correcao: null,
 });
 

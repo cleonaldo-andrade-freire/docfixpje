@@ -1,41 +1,54 @@
-import type { ResultadoValidacao } from '../tipos';
+import type { ResultadoCorrecao, ResultadoValidacao } from '../tipos';
+import type { EstadoLinha } from '../estado/maquinaLinha';
 import { montarOrientacaoManual } from '../orientacao/manual';
 import css from './Diagnostico.module.css';
 
 /**
- * Painel de diagnóstico da linha (spec §5, §7.4). Na Fase 1 não há botão
- * "Tentar corrigir" — só orientação textual. O fluxo encadeado assinatura+PDF/A
- * aparece como UMA lista ordenada.
+ * Painel de diagnóstico da linha (spec §5, §7.4, §8.2). Mostra as ocorrências,
+ * o fluxo de correção manual (encadeado quando assinatura+PDF/A) e, na Fase 2,
+ * os avisos da tentativa de correção automática.
  */
-export function Diagnostico({ resultado }: { resultado: ResultadoValidacao }) {
+export function Diagnostico({
+  resultado,
+  estado,
+  resultadoCorrecao,
+  orientacaoCorrecao,
+}: {
+  resultado: ResultadoValidacao;
+  estado?: EstadoLinha;
+  resultadoCorrecao?: ResultadoCorrecao | null;
+  orientacaoCorrecao?: string | null;
+}) {
   const { ocorrencias } = resultado;
-  if (resultado.apto && ocorrencias.length === 0) return null;
+  const nada = resultado.apto && ocorrencias.length === 0 && !orientacaoCorrecao;
+  if (nada) return null;
 
-  // Linha apta (só avisos): mostra os avisos, mas não o fluxo de "como corrigir".
-  const orientacoes = resultado.apto ? [] : montarOrientacaoManual(ocorrencias);
-  const criptografado = ocorrencias.some((o) => o.codigo === 'ARQUIVO_CRIPTOGRAFADO');
-  // Só linhas reprovadas ganham fluxo de correção (spec §5.6).
-  const temCorrecaoAutomatica = resultado.corrigivel && !resultado.apto;
+  // Depois de corrigido, o diagnóstico antigo perde a relevância.
+  const mostrarOcorrencias = estado !== 'corrigido';
+  const orientacoes =
+    resultado.apto || estado === 'corrigido' ? [] : montarOrientacaoManual(ocorrencias);
+  const avisosCorrecao = resultadoCorrecao?.avisos ?? [];
 
   return (
     <div className={css.raiz}>
-      {ocorrencias.map((o, i) => (
-        <div className={css.ocorrencia} key={`${o.codigo}-${i}`}>
-          <span
-            className={`${css.badge} ${o.gravidade === 'erro' ? css.badgeErro : css.badgeAviso}`}
-          >
-            {o.gravidade === 'erro' ? 'Erro' : 'Aviso'}
-          </span>
-          <span className={css.mensagem}>{o.mensagem}</span>
-          {o.orientacao && <span className={css.orientacao}>{o.orientacao}</span>}
-          {o.detalheTecnico && (
-            <details className={css.detalhe}>
-              <summary>Detalhe técnico</summary>
-              <pre>{o.detalheTecnico}</pre>
-            </details>
-          )}
-        </div>
-      ))}
+      {mostrarOcorrencias &&
+        ocorrencias.map((o, i) => (
+          <div className={css.ocorrencia} key={`${o.codigo}-${i}`}>
+            <span
+              className={`${css.badge} ${o.gravidade === 'erro' ? css.badgeErro : css.badgeAviso}`}
+            >
+              {o.gravidade === 'erro' ? 'Erro' : 'Aviso'}
+            </span>
+            <span className={css.mensagem}>{o.mensagem}</span>
+            {o.orientacao && <span className={css.orientacao}>{o.orientacao}</span>}
+            {o.detalheTecnico && (
+              <details className={css.detalhe}>
+                <summary>Detalhe técnico</summary>
+                <pre>{o.detalheTecnico}</pre>
+              </details>
+            )}
+          </div>
+        ))}
 
       {orientacoes.map((g, i) => (
         <div key={`ori-${i}`}>
@@ -52,9 +65,22 @@ export function Diagnostico({ resultado }: { resultado: ResultadoValidacao }) {
         </div>
       ))}
 
-      {temCorrecaoAutomatica && !criptografado && (
-        <p className={css.nota}>
-          A correção automática chega na próxima versão. Por ora, siga os passos acima.
+      {avisosCorrecao.length > 0 && (
+        <ul className={css.passos}>
+          {avisosCorrecao.map((a, i) => (
+            <li key={`av-${i}`} className={css.orientacao}>
+              {a}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {orientacaoCorrecao && <p className={css.orientacao}>{orientacaoCorrecao}</p>}
+
+      {resultadoCorrecao?.sucesso && (
+        <p className={css.orientacao}>
+          Tamanho: {resultadoCorrecao.tamanhoAntes} → {resultadoCorrecao.tamanhoDepois} bytes.
+          {resultadoCorrecao.textoPreservado ? ' Texto preservado.' : ''}
         </p>
       )}
     </div>

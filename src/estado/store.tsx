@@ -7,7 +7,7 @@ import {
   type Dispatch,
   type ReactNode,
 } from 'react';
-import type { ResultadoValidacao, TipoDetectado } from '../tipos';
+import type { ResultadoCorrecao, ResultadoValidacao, TipoDetectado } from '../tipos';
 import { transicionar, type EstadoLinha } from './maquinaLinha';
 import { descartar, descartarTudo } from '../infra/blobRegistry';
 
@@ -24,7 +24,11 @@ export interface ItemArquivo {
   estado: EstadoLinha;
   etapa: string | null;
   resultado: ResultadoValidacao | null;
-  /** Nome do arquivo corrigido, quando houver (Fase 2). */
+  /** Detalhe da tentativa de correção (avisos, revalidação). Fase 2. */
+  resultadoCorrecao: ResultadoCorrecao | null;
+  /** Orientação manual quando a correção automática não deu (Fase 2). */
+  orientacaoCorrecao: string | null;
+  /** Download do arquivo corrigido, quando houver (Fase 2). */
   correcao: { nome: string; url: string } | null;
 }
 
@@ -45,6 +49,7 @@ export type AcaoStore =
   | { t: 'estado'; id: string; estado: EstadoLinha }
   | { t: 'etapa'; id: string; etapa: string }
   | { t: 'resultado'; id: string; resultado: ResultadoValidacao }
+  | { t: 'correcaoConcluida'; id: string; resultado: ResultadoCorrecao | null; orientacao: string | null }
   | { t: 'correcao'; id: string; nome: string; url: string };
 
 export const estadoInicial: EstadoStore = { itens: [], recusa: null, ocioso: false };
@@ -86,6 +91,17 @@ export function reducer(estado: EstadoStore, acao: AcaoStore): EstadoStore {
       return {
         ...estado,
         itens: mapItem(estado.itens, acao.id, (i) => ({ ...i, resultado: acao.resultado, etapa: null })),
+      };
+    case 'correcaoConcluida':
+      return {
+        ...estado,
+        itens: mapItem(estado.itens, acao.id, (i) => ({
+          ...i,
+          etapa: null,
+          resultadoCorrecao: acao.resultado,
+          orientacaoCorrecao: acao.orientacao,
+          resultado: i.resultado ? { ...i.resultado, ...(acao.resultado ? { correcao: acao.resultado } : {}) } : i.resultado,
+        })),
       };
     case 'correcao':
       return {

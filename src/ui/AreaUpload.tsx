@@ -25,6 +25,8 @@ function itemReprovadoPorTamanho(file: File): ItemArquivo {
     tipoRapido: null,
     estado: 'inapto',
     etapa: null,
+    resultadoCorrecao: null,
+    orientacaoCorrecao: null,
     correcao: null,
     resultado: {
       nomeArquivo: file.name,
@@ -60,6 +62,8 @@ async function montarItem(file: File): Promise<ItemArquivo> {
     estado: 'aguardando',
     etapa: null,
     resultado: null,
+    resultadoCorrecao: null,
+    orientacaoCorrecao: null,
     correcao: null,
   };
 }

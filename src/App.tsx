@@ -3,22 +3,28 @@ import './estilos/global.css';
 import css from './ui/App.module.css';
 import { StoreProvider, useStore, type ItemArquivo } from './estado/store';
 import { iniciarOciosidade } from './infra/ociosidade';
-import { descartar } from './infra/blobRegistry';
+import { criarDownload, descartar } from './infra/blobRegistry';
 import { processarLote, type FabricaWorker } from './execucao/orquestrador';
+import { corrigirArquivo, type FabricaWorkerCorrecao } from './correcao/corrigirArquivo';
+import { nomeCorrigido } from './correcao/nomeCorrigido';
 import { AvisoPrivacidade } from './ui/AvisoPrivacidade';
+import { AvisoLegalCorrecao } from './ui/AvisoLegalCorrecao';
 import { AreaUpload } from './ui/AreaUpload';
 import { BotaoValidar } from './ui/BotaoValidar';
 import { ControlesDescarte } from './ui/ControlesDescarte';
 import { ListaArquivos } from './ui/ListaArquivos';
 
 interface PropsApp {
-  /** Injetável em teste. Em produção, o orquestrador usa o worker real. */
+  /** Injetáveis em teste. Em produção, os orquestradores usam os workers reais. */
   fabricaWorker?: FabricaWorker | undefined;
+  fabricaWorkerCorrecao?: FabricaWorkerCorrecao | undefined;
 }
 
-function AppInterno({ fabricaWorker }: PropsApp) {
+function AppInterno({ fabricaWorker, fabricaWorkerCorrecao }: PropsApp) {
   const { estado, dispatch } = useStore();
   const [validando, setValidando] = useState(false);
+  const [corrigindoId, setCorrigindoId] = useState<string | null>(null);
+  const [avisoLegalMostrado, setAvisoLegalMostrado] = useState(false);
   const ociosidadeRef = useRef<ReturnType<typeof iniciarOciosidade> | null>(null);
 
   useEffect(() => {
@@ -68,6 +74,53 @@ function AppInterno({ fabricaWorker }: PropsApp) {
     }
   }, [estado.itens, dispatch, fabricaWorker]);
 
+  const aoBaixarOriginal = useCallback((item: ItemArquivo) => {
+    const { url } = criarDownload(`${item.id}-orig`, item.file, item.file.name);
+    baixar(url, item.file.name);
+  }, []);
+
+  const aoCorrigir = useCallback(
+    async (id: string) => {
+      const item = estado.itens.find((i) => i.id === id);
+      if (!item || !item.resultado) return;
+      if (!avisoLegalMostrado) setAvisoLegalMostrado(true);
+      setCorrigindoId(id);
+      cutucar();
+      dispatch({ t: 'estado', id, estado: 'corrigindo' });
+      try {
+        const bytes = await item.file.arrayBuffer();
+        const saida = await corrigirArquivo({
+          nomeArquivo: item.file.name,
+          tipo: item.resultado.tipoDetectado,
+          bytes,
+          ocorrencias: item.resultado.ocorrencias,
+          cb: {
+            onEtapa: (m) => dispatch({ t: 'etapa', id, etapa: m }),
+          },
+          ...(fabricaWorkerCorrecao ? { fabricaWorker: fabricaWorkerCorrecao } : {}),
+        });
+
+        dispatch({
+          t: 'correcaoConcluida',
+          id,
+          resultado: saida.resultado,
+          orientacao: saida.orientacao ?? null,
+        });
+
+        if (saida.estadoDestino === 'corrigido' && saida.bufferCorrigido) {
+          const nome = nomeCorrigido(item.file.name);
+          const blob = new Blob([saida.bufferCorrigido], { type: 'application/pdf' });
+          const { url } = criarDownload(id, blob, nome);
+          dispatch({ t: 'correcao', id, nome, url });
+        }
+        dispatch({ t: 'estado', id, estado: saida.estadoDestino });
+      } finally {
+        setCorrigindoId(null);
+      }
+    },
+    [estado.itens, dispatch, fabricaWorkerCorrecao, avisoLegalMostrado],
+  );
+
   const temAguardando = estado.itens.some((i) => i.estado === 'aguardando');
 
   return (
@@ -100,15 +153,35 @@ function AppInterno({ fabricaWorker }: PropsApp) {
         />
       </div>
 
-      <ListaArquivos itens={estado.itens} onRemover={aoRemover} />
+      {avisoLegalMostrado && <AvisoLegalCorrecao />}
+
+      <ListaArquivos
+        itens={estado.itens}
+        onRemover={aoRemover}
+        onCorrigir={aoCorrigir}
+        onBaixarOriginal={aoBaixarOriginal}
+        corrigindoAlgum={corrigindoId !== null}
+      />
     </main>
   );
 }
 
-export function App({ fabricaWorker }: PropsApp = {}) {
+function baixar(url: string, nome: string): void {
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nome;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+export function App({ fabricaWorker, fabricaWorkerCorrecao }: PropsApp = {}) {
   return (
     <StoreProvider>
-      <AppInterno fabricaWorker={fabricaWorker} />
+      <AppInterno
+        fabricaWorker={fabricaWorker}
+        fabricaWorkerCorrecao={fabricaWorkerCorrecao}
+      />
     </StoreProvider>
   );
 }

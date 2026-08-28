@@ -1,11 +1,10 @@
-/// <reference lib="webworker" />
 import type { ParaCorrecao, DaCorrecao } from '../correcao/protocoloCorrecao';
 import { carregarMotor, motorJaCarregado, MotorIndisponivel } from '../correcao/motor';
 import { corrigirPdf } from '../correcao/corrigirPdf';
 
 /**
- * Worker de correção. Um worker por operação (spec §9.2): terminá-lo libera a
- * memória linear do WASM. Carrega o motor sob demanda; "Carregando o motor de
+ * Handler de correção. Roda dentro de `pdf.worker.ts` (worker único), um por
+ * operação (spec §9.2). Carrega o motor sob demanda; "Carregando o motor de
  * correção…" só na primeira vez da sessão (spec §6).
  */
 
@@ -47,14 +46,4 @@ export async function processarCorrecao(
   } catch (e) {
     responder({ tipo: 'erro', mensagem: e instanceof Error ? e.message : String(e) });
   }
-}
-
-if (typeof self !== 'undefined' && 'onmessage' in self) {
-  self.onmessage = (ev: MessageEvent<ParaCorrecao>) => {
-    void processarCorrecao(ev.data, (m) => {
-      const transfer =
-        m.tipo === 'resultado' && m.bufferCorrigido ? [m.bufferCorrigido] : [];
-      (self as unknown as Worker).postMessage(m, transfer);
-    });
-  };
 }
