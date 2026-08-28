@@ -7,7 +7,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/setupTests.ts'],
     globals: true,
-    exclude: ['tests/e2e/**', 'node_modules/**'],
+    exclude: ['tests/e2e/**', 'tests/bundle/**', 'node_modules/**'],
     css: { modules: { classNameStrategy: 'non-scoped' } },
     // Fixtures de fronteira têm 10-25 MB; a análise sob suíte paralela pode
     // passar dos 5 s padrão.

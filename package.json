@@ -11,7 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:bundle": "vite build && vitest run tests/bundle",
+    "test:bundle": "vite build && vitest run --config vitest.bundle.config.ts",
     "fixtures": "tsx scripts/gerar-fixtures.ts",
     "lint": "tsc --noEmit"
   },
