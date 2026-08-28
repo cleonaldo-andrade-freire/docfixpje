@@ -1,0 +1,68 @@
+import { beforeAll, describe, expect, test } from 'vitest';
+import { carregarPdf, varrerTrailerBruto } from './estrutura';
+import { gerarTodas } from '../../scripts/gerar-fixtures';
+
+let fx: Record<string, Uint8Array>;
+beforeAll(async () => {
+  fx = await gerarTodas();
+}, 60_000);
+
+describe('carregarPdf', () => {
+  test('PDF simples carrega ok', async () => {
+    const r = await carregarPdf(fx['simples.pdf']!);
+    expect(r.ok).toBe(true);
+  });
+
+  test('PDF com /Encrypt -> ARQUIVO_CRIPTOGRAFADO', async () => {
+    const r = await carregarPdf(fx['criptografado.pdf']!);
+    expect(r).toEqual({ ok: false, motivo: 'ARQUIVO_CRIPTOGRAFADO' });
+  });
+
+  test('bytes lixo -> ARQUIVO_CORROMPIDO', async () => {
+    const r = await carregarPdf(new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 1, 2, 3]));
+    expect(r).toEqual({ ok: false, motivo: 'ARQUIVO_CORROMPIDO' });
+  });
+
+  test('assinado.pdf ainda carrega (estrutura válida)', async () => {
+    const r = await carregarPdf(fx['assinado.pdf']!);
+    expect(r.ok).toBe(true);
+  });
+});
+
+describe('varrerTrailerBruto', () => {
+  test('acha assinatura em PDF assinado', () => {
+    const t = varrerTrailerBruto(fx['assinado.pdf']!);
+    expect(t.temByteRangeEContents).toBe(true);
+    expect(t.sigFlags).toBe(3);
+    expect(t.nomesCamposSig).toContain('Signature1');
+    expect(t.camposSigComV).toBeGreaterThanOrEqual(1);
+    expect(t.temAcroForm).toBe(true);
+  });
+
+  test('campo de assinatura vazio: sem /V, sem ByteRange, SigFlags 1', () => {
+    const t = varrerTrailerBruto(fx['campo-sig-vazio.pdf']!);
+    expect(t.temByteRangeEContents).toBe(false);
+    expect(t.sigFlags).toBe(1);
+    expect(t.camposSigComV).toBe(0);
+    expect(t.nomesCamposSig).toContain('Assinatura1');
+  });
+
+  test('docmdp.pdf: /Perms com /DocMDP', () => {
+    const t = varrerTrailerBruto(fx['docmdp.pdf']!);
+    expect(t.temPerms).toBe(true);
+    expect(t.temDocMDP).toBe(true);
+  });
+
+  test('PDF limpo não acha nada', () => {
+    const t = varrerTrailerBruto(fx['simples.pdf']!);
+    expect(t.temByteRangeEContents).toBe(false);
+    expect(t.temEncrypt).toBe(false);
+    expect(t.temPerms).toBe(false);
+    expect(t.nomesCamposSig).toEqual([]);
+    expect(t.sigFlags).toBeNull();
+  });
+
+  test('criptografado.pdf: temEncrypt', () => {
+    expect(varrerTrailerBruto(fx['criptografado.pdf']!).temEncrypt).toBe(true);
+  });
+});
