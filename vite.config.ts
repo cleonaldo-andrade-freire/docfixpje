@@ -2,7 +2,11 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { readFileSync } from 'node:fs';
 
-// Cabeçalhos espelhados de public/_headers para paridade em dev/preview (spec §10).
+// Cabeçalhos de produção lidos de public/_headers, aplicados no `vite preview`
+// (que serve o build real). O `vite dev` NÃO recebe a CSP restritiva: o
+// fast-refresh do @vitejs/plugin-react injeta script e estilo inline, que a
+// CSP de produção bloqueia. Paridade de segurança se verifica no preview e no
+// deploy, não no dev.
 function headersDeArquivo(): Record<string, string> {
   try {
     const txt = readFileSync(new URL('./public/_headers', import.meta.url), 'utf8');
@@ -17,12 +21,18 @@ function headersDeArquivo(): Record<string, string> {
   }
 }
 
-const headers = headersDeArquivo();
+const headersProducao = headersDeArquivo();
+
+// No dev, só os cabeçalhos que não atrapalham o HMR.
+const headersDev: Record<string, string> = {
+  'X-Content-Type-Options': headersProducao['X-Content-Type-Options'] ?? 'nosniff',
+  'Referrer-Policy': headersProducao['Referrer-Policy'] ?? 'no-referrer',
+};
 
 export default defineConfig({
   plugins: [react()],
-  server: { headers },
-  preview: { headers },
+  server: { headers: headersDev },
+  preview: { headers: headersProducao },
   build: {
     rollupOptions: {
       input: {
