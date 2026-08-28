@@ -1,0 +1,54 @@
+.raiz {
+  list-style: none;
+}
+
+.grade {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: var(--cor-fundo);
+}
+
+.raiz:has(.diagnostico) .grade {
+  border-radius: var(--raio) var(--raio) 0 0;
+}
+
+.nome {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tipo,
+.tamanho {
+  color: var(--cor-texto-2);
+  font-size: 0.9rem;
+}
+
+.remover {
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo-2);
+  color: var(--cor-texto);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  line-height: 1;
+}
+.remover:hover {
+  background: var(--cor-neutro-fundo);
+}
+
+@media (max-width: 480px) {
+  .grade {
+    grid-template-columns: 1fr auto;
+  }
+  .estado {
+    grid-column: 1 / -1;
+  }
+}
