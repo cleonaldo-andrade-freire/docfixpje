@@ -4,9 +4,10 @@ import { montarOrientacaoManual } from '../orientacao/manual';
 import css from './Diagnostico.module.css';
 
 /**
- * Painel de diagnóstico da linha (spec §5, §7.4, §8.2). Mostra as ocorrências,
- * o fluxo de correção manual (encadeado quando assinatura+PDF/A) e, na Fase 2,
- * os avisos da tentativa de correção automática.
+ * Painel de diagnóstico da linha. Só aparece quando há algo ACIONÁVEL:
+ * ocorrências de gravidade `erro` (avisos não são impeditivos e não são
+ * mostrados) ou o resultado/orientação de uma tentativa de correção. Linha
+ * aprovada não mostra painel nenhum — só a mensagem de estado.
  */
 export function Diagnostico({
   resultado,
@@ -19,26 +20,30 @@ export function Diagnostico({
   resultadoCorrecao?: ResultadoCorrecao | null;
   orientacaoCorrecao?: string | null;
 }) {
-  const { ocorrencias } = resultado;
-  const nada = resultado.apto && ocorrencias.length === 0 && !orientacaoCorrecao;
-  if (nada) return null;
-
-  // Depois de corrigido, o diagnóstico antigo perde a relevância.
-  const mostrarOcorrencias = estado !== 'corrigido';
-  const orientacoes =
-    resultado.apto || estado === 'corrigido' ? [] : montarOrientacaoManual(ocorrencias);
+  const erros = resultado.ocorrencias.filter((o) => o.gravidade === 'erro');
+  const mostrarErros = estado !== 'corrigido' && estado !== 'apto';
   const avisosCorrecao = resultadoCorrecao?.avisos ?? [];
+
+  // A orientação de correção MANUAL só aparece quando a automática não é opção
+  // (erro não corrigível) ou quando ela já falhou. Enquanto a linha está
+  // `inapto` e é corrigível, o caminho é o botão "Tentar corrigir".
+  const podeAutoCorrigir = resultado.corrigivel && estado === 'inapto';
+  const orientacoes =
+    mostrarErros && erros.length > 0 && !podeAutoCorrigir ? montarOrientacaoManual(erros) : [];
+
+  const semConteudo =
+    (!mostrarErros || erros.length === 0) &&
+    orientacoes.length === 0 &&
+    avisosCorrecao.length === 0 &&
+    !orientacaoCorrecao;
+  if (semConteudo) return null;
 
   return (
     <div className={css.raiz}>
-      {mostrarOcorrencias &&
-        ocorrencias.map((o, i) => (
+      {mostrarErros &&
+        erros.map((o, i) => (
           <div className={css.ocorrencia} key={`${o.codigo}-${i}`}>
-            <span
-              className={`${css.badge} ${o.gravidade === 'erro' ? css.badgeErro : css.badgeAviso}`}
-            >
-              {o.gravidade === 'erro' ? 'Erro' : 'Aviso'}
-            </span>
+            <span className={`${css.badge} ${css.badgeErro}`}>Erro</span>
             <span className={css.mensagem}>{o.mensagem}</span>
             {o.orientacao && <span className={css.orientacao}>{o.orientacao}</span>}
             {o.detalheTecnico && (
@@ -76,13 +81,6 @@ export function Diagnostico({
       )}
 
       {orientacaoCorrecao && <p className={css.orientacao}>{orientacaoCorrecao}</p>}
-
-      {resultadoCorrecao?.sucesso && (
-        <p className={css.orientacao}>
-          Tamanho: {resultadoCorrecao.tamanhoAntes} → {resultadoCorrecao.tamanhoDepois} bytes.
-          {resultadoCorrecao.textoPreservado ? ' Texto preservado.' : ''}
-        </p>
-      )}
     </div>
   );
 }

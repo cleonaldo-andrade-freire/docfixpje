@@ -32,6 +32,13 @@ export function LinhaArquivo({
 }) {
   const emAtividade = item.estado === 'validando' || item.estado === 'corrigindo';
 
+  // Linha aprovada não mostra painel — só a mensagem de estado (spec §6).
+  const temErro = (item.resultado?.ocorrencias ?? []).some((o) => o.gravidade === 'erro');
+  const mostrarPainel =
+    !!item.resultado &&
+    item.estado !== 'apto' &&
+    (temErro || item.estado === 'corrigido' || item.estado === 'correcao_falhou' || item.estado === 'nao_corrigivel');
+
   return (
     <li className={css.raiz} aria-label={item.file.name}>
       <div className={css.grade}>
@@ -54,7 +61,7 @@ export function LinhaArquivo({
           </button>
         )}
       </div>
-      {item.resultado && (
+      {mostrarPainel && item.resultado && (
         <div className={css.diagnostico}>
           <Diagnostico
             resultado={item.resultado}

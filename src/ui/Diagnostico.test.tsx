@@ -52,26 +52,45 @@ test('Diagnostico em si não renderiza botão de correção (fica na LinhaArquiv
   expect(screen.queryByText(/próxima versão/i)).not.toBeInTheDocument();
 });
 
-test('mostra avisos e tamanho após correção bem-sucedida', () => {
+test('mostra os avisos da correção (ex.: rasterização / resolução)', () => {
   render(
     <Diagnostico
-      resultado={res([oc('TAMANHO_EXCEDIDO', { correcaoDisponivel: 'COMPRIMIR_PDF' })])}
+      resultado={res([oc('ASSINATURA_PRESENTE', { correcaoDisponivel: 'REMOVER_ASSINATURA' })])}
       estado="corrigido"
       resultadoCorrecao={{
         tentada: true,
-        estrategias: ['COMPRIMIR_PDF', 'CONVERTER_PDFA'],
+        estrategias: ['REMOVER_ASSINATURA'],
         sucesso: true,
-        tamanhoAntes: 26_000_000,
-        tamanhoDepois: 9_000_000,
-        textoPreservado: true,
-        avisos: ['A resolução das imagens foi reduzida para caber no limite.'],
+        tamanhoAntes: 100,
+        tamanhoDepois: 80,
+        textoPreservado: false,
+        avisos: ['Para remover a assinatura, as páginas foram convertidas em imagem.'],
         duracaoMs: 1200,
         revalidacao: { apto: true, ocorrencias: [] },
       }}
     />,
   );
-  expect(screen.getByText(/resolução das imagens foi reduzida/i)).toBeInTheDocument();
-  expect(screen.getByText(/26000000 → 9000000 bytes/)).toBeInTheDocument();
+  expect(screen.getByText(/convertidas em imagem/i)).toBeInTheDocument();
+});
+
+test('linha aprovada (apto): não renderiza painel nenhum', () => {
+  const { container } = render(
+    <Diagnostico resultado={res([oc('PDFA_NAO_DECLARADO', { correcaoDisponivel: null })])} estado="apto" />,
+  );
+  expect(container).toBeEmptyDOMElement();
+});
+
+test('avisos de validação nunca são exibidos', () => {
+  const aviso: Parameters<typeof res>[0][number] = {
+    codigo: 'PDFA_NAO_DECLARADO',
+    gravidade: 'aviso',
+    mensagem: 'nao deveria aparecer',
+    detalheTecnico: 't',
+    orientacao: 'o',
+    correcaoDisponivel: 'CONVERTER_PDFA',
+  };
+  const { container } = render(<Diagnostico resultado={res([aviso])} estado="inapto" />);
+  expect(container).toBeEmptyDOMElement();
 });
 
 test('arquivo criptografado: orientação de remover proteção, sem nota de correção', () => {

@@ -45,7 +45,9 @@ test('upload → Validar → um apto verde e um inapto vermelho com orientação
     (await within(linhaAssinado()).findAllByText(/contém 1 assinatura digital/i)).length,
   ).toBeGreaterThanOrEqual(1);
   expect(within(linhaAssinado()).getAllByRole('img', { name: /não apto/i }).length).toBeGreaterThanOrEqual(1);
-  expect(within(linhaAssinado()).getByText(/reimprima para remover a assinatura|remova a assinatura reimprimindo/i)).toBeInTheDocument();
+  // linha reprovada e corrigível: oferece "Tentar corrigir", não o passo a passo manual
+  expect(within(linhaAssinado()).getByRole('button', { name: /tentar corrigir/i })).toBeInTheDocument();
+  expect(within(linhaAssinado()).queryByText(/reimprima o pdf pelo navegador/i)).not.toBeInTheDocument();
 });
 
 test('após validar tudo, o botão Validar volta a ficar desabilitado', async () => {
