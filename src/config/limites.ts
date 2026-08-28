@@ -24,7 +24,34 @@ export const LIMITES = {
 
   /** Limite de tempo de uma correção de PDF antes de abortar (spec §8.3.6). Fase 2. */
   TIMEOUT_CORRECAO_PDF_MS: 120_000,
+
+  /**
+   * Similaridade mínima (0..1) entre o texto do PDF original e o do corrigido
+   * para considerar o texto preservado (spec §8.2, §14.3). Fase 2.
+   */
+  LIMIAR_PRESERVACAO_TEXTO: 0.98,
 } as const;
+
+/**
+ * Níveis de compressão do motor, em ordem de tentativa (spec §8.2). Fase 2.
+ * A correção para na primeira tentativa que ficar abaixo do limite.
+ */
+export interface NivelCompressao {
+  rotulo: string;
+  pdfsettings: '/ebook' | '/screen';
+  /** dpi de downsample de imagem; null = sem downsample explícito. */
+  dpi: number | null;
+}
+
+export const COMPRESSAO_TENTATIVAS: readonly NivelCompressao[] = [
+  { rotulo: 'ebook 150 dpi', pdfsettings: '/ebook', dpi: 150 },
+  { rotulo: 'ebook 120 dpi', pdfsettings: '/ebook', dpi: 120 },
+  { rotulo: 'screen 72 dpi', pdfsettings: '/screen', dpi: 72 },
+  { rotulo: 'screen 60 dpi', pdfsettings: '/screen', dpi: 60 },
+] as const;
+
+/** Abaixo deste dpi, avisar que a resolução das imagens foi reduzida (spec §8.2). */
+export const DPI_AVISO_RESOLUCAO = 100;
 
 /**
  * Endereço oficial da ferramenta, exibido na interface (spec §10.4). Editável
