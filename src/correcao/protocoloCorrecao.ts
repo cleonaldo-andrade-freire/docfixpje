@@ -7,6 +7,8 @@ export type ParaCorrecao = {
   buffer: ArrayBuffer;
   ocorrencias: Ocorrencia[];
   config?: ConfigValidacao;
+  /** `?e2e=1`: usar o motor falso do Playwright (nunca em produção). */
+  e2e?: boolean;
 };
 
 export type DaCorrecao =

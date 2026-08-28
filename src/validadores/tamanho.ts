@@ -8,8 +8,9 @@ export function validarTamanho(ctx: ContextoArquivo): Ocorrencia[] {
   if (ctx.tamanhoBytes <= LIMITES.TAMANHO_MAX_BYTES) return [];
 
   const excedente = ctx.tamanhoBytes - LIMITES.TAMANHO_MAX_BYTES;
-  const correcao: EstrategiaCorrecao =
-    ctx.tipo === 'application/pdf' ? 'COMPRIMIR_PDF' : 'RECODIFICAR_MIDIA';
+  // PDF: compressão automática. MP3/MP4: só orientação textual (decisão P2-1).
+  const ehPdf = ctx.tipo === 'application/pdf';
+  const correcao: EstrategiaCorrecao | null = ehPdf ? 'COMPRIMIR_PDF' : null;
 
   return [
     {
@@ -17,10 +18,9 @@ export function validarTamanho(ctx: ContextoArquivo): Ocorrencia[] {
       gravidade: 'erro',
       mensagem: `O arquivo tem ${formatarTamanho(ctx.tamanhoBytes)} — ${formatarTamanho(excedente)} acima do limite de ${formatarTamanho(LIMITES.TAMANHO_MAX_BYTES)}.`,
       detalheTecnico: `${ctx.tamanhoBytes} bytes; limite ${LIMITES.TAMANHO_MAX_BYTES} bytes; excedente ${excedente} bytes`,
-      orientacao:
-        correcao === 'COMPRIMIR_PDF'
-          ? 'A correção automática comprime o PDF por tentativas até caber no limite.'
-          : 'A correção automática recodifica a mídia com bitrate menor até caber no limite.',
+      orientacao: ehPdf
+        ? 'A correção automática comprime o PDF por tentativas até caber no limite.'
+        : 'Reduza a duração ou recodifique com bitrate menor no seu editor. A recodificação automática de mídia não está disponível nesta versão.',
       correcaoDisponivel: correcao,
     },
   ];

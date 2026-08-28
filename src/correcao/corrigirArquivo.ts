@@ -4,6 +4,7 @@ import type { ConfigValidacao } from '../validadores/contexto';
 import { LIMITES } from '../config/limites';
 import { executarComTimeout, TIMEOUT } from './executarComTimeout';
 import type { ParaCorrecao, DaCorrecao } from './protocoloCorrecao';
+import { e2eAtivo } from './ganchoE2E';
 
 /**
  * Entrypoint de correção, desacoplado do motor e da UI (spec §15).
@@ -119,9 +120,14 @@ export async function corrigirArquivo(params: {
         bufferCorrigido: null,
       });
 
-    const msg: ParaCorrecao = config
-      ? { tipo: 'corrigir', nomeArquivo, buffer: bytes, ocorrencias, config }
-      : { tipo: 'corrigir', nomeArquivo, buffer: bytes, ocorrencias };
+    const msg: ParaCorrecao = {
+      tipo: 'corrigir',
+      nomeArquivo,
+      buffer: bytes,
+      ocorrencias,
+      ...(config ? { config } : {}),
+      ...(e2eAtivo() ? { e2e: true } : {}),
+    };
     worker.postMessage(msg, [bytes]);
   });
 

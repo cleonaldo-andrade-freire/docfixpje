@@ -1,0 +1,67 @@
+import { test, expect } from '@playwright/test';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const fixtures = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'fixtures');
+const fx = (n: string) => join(fixtures, n);
+
+async function validar(page: import('@playwright/test').Page, arquivo: string, query = '') {
+  await page.goto(`/${query}`);
+  await page.getByLabel(/selecionar arquivos/i).setInputFiles(fx(arquivo));
+  await page.getByRole('button', { name: /^validar$/i }).click();
+}
+
+test('assinado → Tentar corrigir → corrigido, com download (motor de teste)', async ({ page }) => {
+  await validar(page, 'assinado.pdf', '?e2e=1');
+  const linha = page.getByRole('listitem', { name: 'assinado.pdf' });
+  await linha.getByRole('button', { name: /tentar corrigir/i }).click();
+
+  await expect(linha.getByText('Corrigido — revalidado com sucesso')).toBeVisible({ timeout: 15_000 });
+  await expect(linha.getByRole('link', { name: /baixar arquivo corrigido/i })).toHaveAttribute(
+    'download',
+    'assinado-corrigido.pdf',
+  );
+  await expect(linha.getByRole('button', { name: /baixar original/i })).toBeVisible();
+  // aviso legal apareceu na 1a correção
+  await expect(page.getByText(/documento novo/i)).toBeVisible();
+});
+
+test('sem motor real: Tentar corrigir → correcao_falhou + orientação manual', async ({ page }) => {
+  await validar(page, 'assinado.pdf'); // sem ?e2e
+  const linha = page.getByRole('listitem', { name: 'assinado.pdf' });
+  await linha.getByRole('button', { name: /tentar corrigir/i }).click();
+
+  await expect(linha.getByText('Não foi possível corrigir automaticamente')).toBeVisible({
+    timeout: 15_000,
+  });
+  await expect(linha.getByText(/remova a assinatura reimprimindo|reimprima o pdf/i)).toBeVisible();
+});
+
+test('PDF criptografado → nao_corrigivel, sem botão corrigir', async ({ page }) => {
+  await validar(page, 'criptografado.pdf');
+  const linha = page.getByRole('listitem', { name: 'criptografado.pdf' });
+  await expect(linha.getByText(/protegido por senha/i).first()).toBeVisible();
+  await expect(linha.getByRole('button', { name: /tentar corrigir/i })).toHaveCount(0);
+});
+
+test('MP4 acima do limite → sem correção automática, só orientação (decisão P2-1)', async ({ page }) => {
+  await validar(page, 'video-grande.mp4');
+  const linha = page.getByRole('listitem', { name: 'video-grande.mp4' });
+  await expect(linha.getByText(/bitrate menor/i).first()).toBeVisible();
+  await expect(linha.getByRole('button', { name: /tentar corrigir/i })).toHaveCount(0);
+});
+
+test('nenhuma requisição a terceiros durante um ciclo de correção', async ({ page }) => {
+  const externas: string[] = [];
+  page.on('request', (r) => {
+    const h = new URL(r.url()).host;
+    if (h !== 'localhost:4174') externas.push(r.url());
+  });
+  await validar(page, 'assinado.pdf', '?e2e=1');
+  await page
+    .getByRole('listitem', { name: 'assinado.pdf' })
+    .getByRole('button', { name: /tentar corrigir/i })
+    .click();
+  await expect(page.getByText('Corrigido — revalidado com sucesso')).toBeVisible({ timeout: 15_000 });
+  expect(externas).toEqual([]);
+});

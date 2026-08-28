@@ -1,6 +1,12 @@
 import type { ParaCorrecao, DaCorrecao } from '../correcao/protocoloCorrecao';
-import { carregarMotor, motorJaCarregado, MotorIndisponivel } from '../correcao/motor';
+import {
+  carregarMotor,
+  motorJaCarregado,
+  MotorIndisponivel,
+  __setMotorParaTeste,
+} from '../correcao/motor';
 import { corrigirPdf } from '../correcao/corrigirPdf';
+import { motorFalsoE2E } from '../correcao/ganchoE2E';
 
 /**
  * Handler de correção. Roda dentro de `pdf.worker.ts` (worker único), um por
@@ -13,6 +19,7 @@ export async function processarCorrecao(
   responder: (m: DaCorrecao) => void,
 ): Promise<void> {
   try {
+    if (msg.e2e) __setMotorParaTeste(motorFalsoE2E);
     if (!motorJaCarregado()) responder({ tipo: 'etapa', mensagem: 'Carregando o motor de correção…' });
 
     let motor;

@@ -69,7 +69,7 @@ describe('spec §14.1', () => {
   test('MP4 grande -> reprovado só por tamanho', async () => {
     const r = await val('video-grande.mp4');
     expect(cod(r)).toEqual(['TAMANHO_EXCEDIDO']);
-    expect(r.ocorrencias[0]!.correcaoDisponivel).toBe('RECODIFICAR_MIDIA');
+    expect(r.ocorrencias[0]!.correcaoDisponivel).toBeNull();
   });
 
   test('PDF/A-1b -> apto, pdfaParte 1, conformidade B, sem ocorrências', async () => {

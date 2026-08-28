@@ -25,7 +25,8 @@ test('um byte acima -> TAMANHO_EXCEDIDO erro, com excedente no detalhe', () => {
   expect(o[0]!.correcaoDisponivel).toBe('COMPRIMIR_PDF');
 });
 
-test('MP4 grande -> correção RECODIFICAR_MIDIA', () => {
+test('MP4 grande -> sem correção automática (só orientação, decisão P2-1)', () => {
   const o = validarTamanho(ctxFake(50 * 1024 * 1024, 'video/mp4'));
-  expect(o[0]!.correcaoDisponivel).toBe('RECODIFICAR_MIDIA');
+  expect(o[0]!.correcaoDisponivel).toBeNull();
+  expect(o[0]!.orientacao).toMatch(/bitrate menor/i);
 });
