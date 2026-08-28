@@ -1,36 +1,52 @@
+/* O estado da linha é o elemento de maior peso visual da tela (spec §1.7). */
 .raiz {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 10px;
-  border-radius: var(--raio);
+  gap: 7px;
+  padding: 5px 11px 5px 9px;
+  border-radius: var(--raio-full);
+  border: 1px solid transparent;
   font-weight: 600;
-  transition: background-color var(--dur-transicao) ease, color var(--dur-transicao) ease;
+  font-size: 0.8125rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition: background-color var(--dur-transicao) var(--ease),
+    color var(--dur-transicao) var(--ease), border-color var(--dur-transicao) var(--ease);
+}
+
+.raiz svg {
+  flex-shrink: 0;
 }
 
 .rotulo {
-  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 42ch;
 }
 
 .neutro {
   color: var(--cor-neutro);
   background: var(--cor-neutro-fundo);
+  border-color: var(--cor-neutro-borda);
 }
 .verde {
   color: var(--cor-ok);
   background: var(--cor-ok-fundo);
+  border-color: var(--cor-ok-borda);
 }
 .vermelho {
   color: var(--cor-erro);
   background: var(--cor-erro-fundo);
+  border-color: var(--cor-erro-borda);
 }
 .ambar {
   color: var(--cor-atencao);
   background: var(--cor-atencao-fundo);
+  border-color: var(--cor-atencao-borda);
 }
 
 .raiz :global(svg[data-spinner='true']) {
-  animation: girar 0.9s linear infinite;
+  animation: girar 0.8s linear infinite;
 }
 
 @keyframes girar {
@@ -42,5 +58,15 @@
 @media (prefers-reduced-motion: reduce) {
   .raiz :global(svg[data-spinner='true']) {
     animation: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .rotulo {
+    max-width: none;
+    white-space: normal;
+  }
+  .raiz {
+    white-space: normal;
   }
 }

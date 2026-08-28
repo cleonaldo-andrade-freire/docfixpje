@@ -1,70 +1,86 @@
 .raiz {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 10px 12px 12px;
-  margin-top: -4px;
-  border: 1px solid var(--cor-borda);
-  border-top: none;
-  border-radius: 0 0 var(--raio) var(--raio);
-  background: var(--cor-fundo-2);
+  gap: 12px;
+  padding: 14px;
 }
 
 .ocorrencia {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+  padding-left: 12px;
+  border-left: 3px solid var(--cor-erro-borda);
 }
 
 .badge {
   align-self: flex-start;
-  font-size: 0.75rem;
+  font-size: 0.625rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  padding: 1px 6px;
-  border-radius: 4px;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: var(--raio-full);
 }
 .badgeErro {
   color: var(--cor-erro);
   background: var(--cor-erro-fundo);
+  border: 1px solid var(--cor-erro-borda);
 }
 .badgeAviso {
   color: var(--cor-atencao);
   background: var(--cor-atencao-fundo);
+  border: 1px solid var(--cor-atencao-borda);
 }
 
 .mensagem {
   font-weight: 600;
+  font-size: 0.875rem;
 }
 .orientacao {
   color: var(--cor-texto-2);
-  font-size: 0.92rem;
+  font-size: 0.8125rem;
+  line-height: 1.55;
 }
 
 .detalhe {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
+  color: var(--cor-texto-3);
+}
+.detalhe summary {
+  cursor: pointer;
+  user-select: none;
+  width: fit-content;
+}
+.detalhe summary:hover {
   color: var(--cor-texto-2);
 }
 .detalhe pre {
   white-space: pre-wrap;
   word-break: break-word;
-  margin: 4px 0 0;
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-sm);
+  font-family: var(--fonte-mono);
+  font-size: 0.6875rem;
+  color: var(--cor-texto-2);
 }
 
 .passos {
-  margin: 4px 0 0;
-  padding-left: 20px;
+  margin: 2px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 .passos li {
-  margin-bottom: 6px;
+  font-size: 0.8125rem;
+  color: var(--cor-texto-2);
+  line-height: 1.55;
 }
 .passoTitulo {
-  font-weight: 600;
-}
-
-.nota {
-  font-size: 0.9rem;
-  color: var(--cor-texto-2);
-  font-style: italic;
+  font-weight: 650;
+  color: var(--cor-texto);
 }

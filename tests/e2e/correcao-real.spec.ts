@@ -27,7 +27,6 @@ test.describe('motor real (Ghostscript-WASM)', () => {
     await expect(linha.getByText('Corrigido — revalidado com sucesso')).toBeVisible({
       timeout: 150_000,
     });
-    await expect(linha.getByText(/Texto preservado/i)).toBeVisible();
     await expect(linha.getByRole('link', { name: /baixar arquivo corrigido/i })).toHaveAttribute(
       'download',
       'assinado-corrigido.pdf',

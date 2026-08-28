@@ -1,9 +1,15 @@
 .raiz {
   margin: 0;
-  padding: 8px 12px;
-  border-left: 3px solid var(--cor-atencao);
+  padding: 11px 14px 11px 16px;
   background: var(--cor-atencao-fundo);
+  border: 1px solid var(--cor-atencao-borda);
+  border-left: 3px solid var(--cor-atencao);
+  border-radius: var(--raio);
   color: var(--cor-texto);
-  border-radius: 4px;
-  font-size: 0.92rem;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.raiz strong {
+  font-weight: 650;
 }

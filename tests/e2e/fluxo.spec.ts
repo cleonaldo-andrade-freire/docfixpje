@@ -20,7 +20,7 @@ test('upload → Validar → um apto verde e um inapto vermelho com orientação
 
   await expect(linhaAssinado.getByText(/contém 1 assinatura digital/i).first()).toBeVisible();
   await expect(linhaAssinado.getByRole('img', { name: /não apto/i }).first()).toBeVisible();
-  await expect(linhaAssinado.getByText(/remova a assinatura reimprimindo/i)).toBeVisible();
+  await expect(linhaAssinado.getByRole('button', { name: /tentar corrigir/i })).toBeVisible();
 });
 
 test('lote acima do máximo é recusado sem travar', async ({ page }) => {

@@ -123,18 +123,22 @@ function AppInterno({ fabricaWorker, fabricaWorkerCorrecao }: PropsApp) {
 
   const temAguardando = estado.itens.some((i) => i.estado === 'aguardando');
 
+  const total = estado.itens.length;
+
   return (
     <main className={css.raiz}>
-      <h1 className={css.titulo}>Validador de arquivos para o PJe</h1>
-      <p className={css.subtitulo}>
-        Confira se um PDF, MP3 ou MP4 está pronto para anexar a uma petição — assinatura
-        digital, tamanho e formato PDF/A. Tudo no seu navegador.
-      </p>
+      <header className={css.cabecalho}>
+        <h1 className={css.titulo}>Validador de arquivos para o PJe</h1>
+        <p className={css.subtitulo}>
+          Confira se um PDF, MP3 ou MP4 está pronto para anexar a uma petição — assinatura
+          digital, tamanho e formato PDF/A. Tudo no seu navegador.
+        </p>
+      </header>
 
       <AvisoPrivacidade />
 
       <AreaUpload
-        totalAtual={estado.itens.length}
+        totalAtual={total}
         onArquivos={aoAdicionar}
         onRecusa={(motivo) => dispatch({ t: 'recusar', motivo })}
       />
@@ -146,11 +150,12 @@ function AppInterno({ fabricaWorker, fabricaWorkerCorrecao }: PropsApp) {
 
       <div className={css.acoes}>
         <BotaoValidar habilitado={temAguardando} validando={validando} onValidar={aoValidar} />
-        <ControlesDescarte
-          temItens={estado.itens.length > 0}
-          ocioso={estado.ocioso}
-          onLimparTudo={aoLimparTudo}
-        />
+        <ControlesDescarte temItens={total > 0} ocioso={estado.ocioso} onLimparTudo={aoLimparTudo} />
+        {total > 0 && (
+          <span className={`${css.contador} num-tabular`}>
+            {total} {total === 1 ? 'arquivo' : 'arquivos'}
+          </span>
+        )}
       </div>
 
       {avisoLegalMostrado && <AvisoLegalCorrecao />}

@@ -1,0 +1,14 @@
+.raiz {
+  display: contents;
+}
+
+.banner {
+  margin: 0;
+  flex: 1 1 100%;
+  padding: 8px 12px;
+  font-size: 0.8125rem;
+  color: var(--cor-texto-2);
+  background: var(--cor-neutro-fundo);
+  border: 1px solid var(--cor-neutro-borda);
+  border-radius: var(--raio-sm);
+}

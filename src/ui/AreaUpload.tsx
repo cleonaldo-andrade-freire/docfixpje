@@ -108,6 +108,22 @@ export function AreaUpload({
         void receber(e.dataTransfer.files);
       }}
     >
+      <svg
+        className={css.icone}
+        viewBox="0 0 24 24"
+        width="28"
+        height="28"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M12 15V3" />
+        <path d="M8 7l4-4 4 4" />
+        <path d="M4 14v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5" />
+      </svg>
       <p className={css.titulo}>Arraste os arquivos aqui ou clique para escolher</p>
       <p className={css.ajuda} id={ajudaId}>
         PDF, MP3 ou MP4. Nada é enviado para nenhum servidor.

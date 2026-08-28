@@ -1,26 +1,46 @@
 .raiz {
   position: relative;
-  border: 2px dashed var(--cor-borda);
-  border-radius: var(--raio);
-  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 24px;
   text-align: center;
-  background: var(--cor-fundo-2);
-  transition: border-color var(--dur-transicao) ease, background-color var(--dur-transicao) ease;
+  background: var(--cor-superficie);
+  border: 1.5px dashed var(--cor-borda-forte);
+  border-radius: var(--raio-lg);
+  transition: border-color var(--dur-transicao) var(--ease),
+    background-color var(--dur-transicao) var(--ease);
+}
+
+.raiz:hover {
+  border-color: var(--cor-texto-3);
 }
 
 .arrastando {
-  border-color: var(--cor-foco);
-  background: var(--cor-neutro-fundo);
+  border-color: var(--cor-acento);
+  border-style: solid;
+  background: var(--cor-acento-suave);
+}
+
+.icone {
+  color: var(--cor-texto-3);
+  transition: color var(--dur-transicao) var(--ease);
+}
+.raiz:hover .icone,
+.arrastando .icone {
+  color: var(--cor-acento);
 }
 
 .titulo {
   font-weight: 600;
-  margin: 0 0 4px;
+  font-size: 0.9375rem;
+  color: var(--cor-texto);
 }
+
 .ajuda {
-  color: var(--cor-texto-2);
-  font-size: 0.9rem;
-  margin: 0;
+  color: var(--cor-texto-3);
+  font-size: 0.8125rem;
 }
 
 .input {
@@ -30,11 +50,4 @@
   height: 100%;
   opacity: 0;
   cursor: pointer;
-}
-
-.recusa {
-  margin-top: 10px;
-  color: var(--cor-erro);
-  font-weight: 600;
-  font-size: 0.92rem;
 }

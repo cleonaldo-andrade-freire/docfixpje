@@ -1,54 +1,84 @@
 .raiz {
   list-style: none;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra-1);
+  overflow: hidden;
+  transition: border-color var(--dur-transicao) var(--ease);
+}
+.raiz:hover {
+  border-color: var(--cor-borda-forte);
 }
 
 .grade {
   display: grid;
-  grid-template-columns: 1fr auto auto auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto auto;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
-  border: 1px solid var(--cor-borda);
-  border-radius: var(--raio);
-  background: var(--cor-fundo);
-}
-
-.raiz:has(.diagnostico) .grade {
-  border-radius: var(--raio) var(--raio) 0 0;
+  padding: 12px 14px;
 }
 
 .nome {
   font-weight: 600;
+  font-size: 0.875rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.tipo,
-.tamanho {
+.tipo {
+  font-family: var(--fonte-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: var(--cor-texto-2);
-  font-size: 0.9rem;
+  background: var(--cor-superficie-2);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-full);
+  padding: 2px 8px;
+}
+
+.tamanho {
+  font-size: 0.8125rem;
+  color: var(--cor-texto-3);
 }
 
 .remover {
-  border: 1px solid var(--cor-borda);
-  background: var(--cor-fundo-2);
-  color: var(--cor-texto);
-  border-radius: 6px;
-  width: 28px;
-  height: 28px;
+  appearance: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--cor-texto-3);
+  border-radius: var(--raio-sm);
   cursor: pointer;
+  font-size: 0.8125rem;
   line-height: 1;
+  transition: background-color var(--dur-transicao) var(--ease),
+    color var(--dur-transicao) var(--ease);
 }
 .remover:hover {
-  background: var(--cor-neutro-fundo);
+  background: var(--cor-erro-fundo);
+  color: var(--cor-erro);
 }
 
-@media (max-width: 480px) {
+.diagnostico {
+  border-top: 1px solid var(--cor-borda);
+  background: var(--cor-superficie-2);
+}
+
+@media (max-width: 520px) {
   .grade {
     grid-template-columns: 1fr auto;
+    row-gap: 10px;
   }
   .estado {
     grid-column: 1 / -1;
+  }
+  .tamanho {
+    order: 3;
   }
 }

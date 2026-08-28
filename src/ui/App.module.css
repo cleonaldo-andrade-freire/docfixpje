@@ -1,50 +1,115 @@
 .raiz {
-  max-width: 860px;
+  max-width: 760px;
   margin: 0 auto;
-  padding: 20px 16px 60px;
+  padding: 32px 20px 80px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
+}
+
+.cabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .titulo {
-  font-size: 1.4rem;
-  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 680;
+  letter-spacing: -0.02em;
 }
 
 .subtitulo {
-  margin: -8px 0 0;
   color: var(--cor-texto-2);
-  font-size: 0.95rem;
+  font-size: 0.9375rem;
+  max-width: 62ch;
+  text-wrap: pretty;
 }
 
+/* barra de ações fixa acima da lista */
 .acoes {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
+  padding: 12px 14px;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra-1);
+}
+
+.acoes :global([role='note']) {
+  color: var(--cor-texto-3);
+  font-size: 0.8125rem;
+}
+
+.contador {
+  margin-left: auto;
+  color: var(--cor-texto-3);
+  font-size: 0.8125rem;
 }
 
 .recusa {
-  color: var(--cor-erro);
-  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0;
+  padding: 10px 14px;
+  color: var(--cor-erro);
+  background: var(--cor-erro-fundo);
+  border: 1px solid var(--cor-erro-borda);
+  border-radius: var(--raio);
+  font-weight: 550;
+  font-size: 0.875rem;
 }
 
-.acoes :global(button),
-.recusa + * :global(button) {
-  padding: 8px 16px;
-  border-radius: 6px;
-  border: 1px solid var(--cor-borda);
-  background: var(--cor-fundo-2);
+/* sistema de botões — usado por BotaoValidar e ControlesDescarte */
+.acoes :global(button) {
+  appearance: none;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: var(--raio-sm);
+  border: 1px solid var(--cor-borda-forte);
+  background: var(--cor-superficie);
   color: var(--cor-texto);
+  font-weight: 560;
+  font-size: 0.875rem;
   cursor: pointer;
+  transition: background-color var(--dur-transicao) var(--ease),
+    border-color var(--dur-transicao) var(--ease), box-shadow var(--dur-transicao) var(--ease),
+    transform var(--dur-transicao) var(--ease);
 }
-.acoes :global(button[disabled]) {
-  opacity: 0.5;
+.acoes :global(button:hover:not(:disabled)) {
+  background: var(--cor-superficie-2);
+  border-color: var(--cor-texto-3);
+}
+.acoes :global(button:active:not(:disabled)) {
+  transform: translateY(1px);
+}
+.acoes :global(button:disabled) {
+  opacity: 0.55;
   cursor: not-allowed;
 }
-.acoes :global([role='note']) {
-  color: var(--cor-texto-2);
-  font-size: 0.88rem;
+
+/* o primeiro botão da barra (Validar) é o primário */
+.acoes > div:first-child :global(button:not(:disabled)) {
+  background: var(--cor-acento);
+  border-color: var(--cor-acento);
+  color: #fff;
+  box-shadow: var(--sombra-1);
+}
+.acoes > div:first-child :global(button:hover:not(:disabled)) {
+  background: var(--cor-acento-forte);
+  border-color: var(--cor-acento-forte);
+}
+
+@media (max-width: 520px) {
+  .raiz {
+    padding: 20px 14px 64px;
+  }
+  .contador {
+    width: 100%;
+    margin-left: 0;
+  }
 }

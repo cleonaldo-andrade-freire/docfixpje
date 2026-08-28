@@ -1,3 +1,5 @@
+import css from './ControlesDescarte.module.css';
+
 /**
  * "Limpar tudo" e o aviso de descarte por inatividade (spec §9.5).
  */
@@ -11,9 +13,11 @@ export function ControlesDescarte({
   onLimparTudo: () => void;
 }) {
   return (
-    <div>
+    <div className={css.raiz}>
       {ocioso && (
-        <p role="status">Os arquivos foram descartados por inatividade.</p>
+        <p className={css.banner} role="status">
+          Os arquivos foram descartados por inatividade.
+        </p>
       )}
       {temItens && (
         <button type="button" onClick={onLimparTudo}>
