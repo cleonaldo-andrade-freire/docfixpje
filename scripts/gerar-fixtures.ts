@@ -203,11 +203,12 @@ function pdfCriptografado(): Uint8Array {
 }
 
 function pdfCorrompido(): Uint8Array {
-  return Buffer.from(
-    '%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n' +
-      'lixo binario aqui \x00\x01\x02\x03 sem xref valido\n%%EOF',
-    'latin1',
-  );
+  // Cabeçalho de PDF, mas o resto é ruído: nenhum objeto, nenhum xref, nenhum
+  // trailer. O pdf-lib não consegue reconstruir nada disto.
+  const cab = Buffer.from('%PDF-1.7\n', 'latin1');
+  const ruido = Buffer.alloc(600);
+  for (let i = 0; i < ruido.length; i++) ruido[i] = (i * 37 + 11) % 256;
+  return Buffer.concat([cab, ruido]);
 }
 
 function arquivoFalso(): Uint8Array {
