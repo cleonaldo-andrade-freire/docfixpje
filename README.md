@@ -17,9 +17,12 @@ arquivo sai da máquina.
 - **Fase 1 — Validação:** completa. Upload, botão Validar, processamento visível
   por arquivo, diagnóstico verde/vermelho, orientação textual de correção
   manual, descarte, service worker offline, cabeçalhos de segurança.
-- **Fase 2 — Correção automática:** não iniciada. Depende de duas decisões
-  registradas como artefato (licença do motor WASM; COOP/COEP). Ver
-  `docs/superpowers/plans/2026-08-28-validador-pje-fase2.md`.
+- **Fase 2 — Correção automática:** pipeline, UI e testes completos, sob
+  **AGPL-3.0**. "Tentar corrigir" reescreve o PDF numa passada única (remover
+  assinatura + PDF/A + comprimir), sempre **revalidando o arquivo de saída**
+  antes de reportar sucesso. Falta apenas um build funcional de Ghostscript-WASM
+  para a transformação real — sem ele, a correção cai em `correcao_falhou` com
+  instrução manual. Detalhes e ponto de integração: `docs/walkthrough-fase2.md`.
 
 ## Rodar
 
@@ -41,5 +44,6 @@ mesmo que uma dependência seja comprometida.
 
 ## Licença
 
-A definir junto com a decisão de licença do motor de correção (Fase 2, tarefa
-P2-0). A intenção é **código aberto e verificável** (spec §10.4).
+**GNU AGPL-3.0** (`LICENSE`). A ferramenta é código aberto e verificável
+(spec §10.4); a AGPL acompanha a escolha do motor de correção Ghostscript
+(decisão P2-0, `docs/decisoes/`).
