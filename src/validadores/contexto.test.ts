@@ -1,11 +1,10 @@
-import { beforeAll, expect, test } from 'vitest';
+import { expect, test } from 'vitest';
 import { montarContexto, CONFIG_PADRAO } from './contexto';
-import { gerarTodas } from '../../scripts/gerar-fixtures';
+import { lerFixture } from '../../scripts/lib/ler-fixture';
 
-let fx: Record<string, Uint8Array>;
-beforeAll(async () => {
-  fx = await gerarTodas();
-}, 60_000);
+const fx = new Proxy({} as Record<string, Uint8Array>, {
+  get: (_t, p) => lerFixture(String(p)),
+});
 
 test('PDF simples: bloco pdf presente, pdfaId null', async () => {
   const ctx = await montarContexto('simples.pdf', fx['simples.pdf']!, 'application/pdf');

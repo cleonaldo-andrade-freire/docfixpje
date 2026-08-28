@@ -5,12 +5,10 @@ import type { ConformidadePdfa } from '../tipos';
  * Sem DOMParser: precisa rodar dentro de Web Worker, que não tem DOM.
  */
 
+const DECODER_LATIN1 = new TextDecoder('latin1');
+
 export function extrairXmp(bytes: Uint8Array): string | null {
-  let s = '';
-  const CHUNK = 0x8000;
-  for (let i = 0; i < bytes.length; i += CHUNK) {
-    s += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-  }
+  const s = DECODER_LATIN1.decode(bytes);
   const ini = s.indexOf('<?xpacket begin');
   if (ini === -1) return null;
   const fimMarca = s.indexOf('<?xpacket end', ini);

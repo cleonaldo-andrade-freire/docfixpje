@@ -44,14 +44,11 @@ export interface TrailerBruto {
   camposSigComV: number;
 }
 
+const DECODER_LATIN1 = new TextDecoder('latin1');
+
 /** Latin-1: cada byte vira uma code unit. Seguro para varrer sintaxe PDF. */
 export function comoTexto(bytes: Uint8Array): string {
-  let s = '';
-  const CHUNK = 0x8000;
-  for (let i = 0; i < bytes.length; i += CHUNK) {
-    s += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-  }
-  return s;
+  return DECODER_LATIN1.decode(bytes);
 }
 
 export function varrerTrailerBruto(bytes: Uint8Array): TrailerBruto {

@@ -1,11 +1,10 @@
-import { beforeAll, describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { carregarPdf, varrerTrailerBruto } from './estrutura';
-import { gerarTodas } from '../../scripts/gerar-fixtures';
+import { lerFixture } from '../../scripts/lib/ler-fixture';
 
-let fx: Record<string, Uint8Array>;
-beforeAll(async () => {
-  fx = await gerarTodas();
-}, 60_000);
+const fx = new Proxy({} as Record<string, Uint8Array>, {
+  get: (_t, p) => lerFixture(String(p)),
+});
 
 describe('carregarPdf', () => {
   test('PDF simples carrega ok', async () => {

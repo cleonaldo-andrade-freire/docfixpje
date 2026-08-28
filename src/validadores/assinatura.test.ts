@@ -1,13 +1,12 @@
-import { beforeAll, expect, test } from 'vitest';
+import { expect, test } from 'vitest';
 import { montarContexto } from './contexto';
 import { validarAssinatura } from './assinatura';
 import type { TipoDetectado } from '../tipos';
-import { gerarTodas } from '../../scripts/gerar-fixtures';
+import { lerFixture } from '../../scripts/lib/ler-fixture';
 
-let fx: Record<string, Uint8Array>;
-beforeAll(async () => {
-  fx = await gerarTodas();
-}, 60_000);
+const fx = new Proxy({} as Record<string, Uint8Array>, {
+  get: (_t, p) => lerFixture(String(p)),
+});
 
 const ctxDe = (nome: string, tipo: TipoDetectado) =>
   montarContexto(nome, fx[nome]!, tipo);

@@ -1,14 +1,13 @@
-import { beforeAll, expect, test } from 'vitest';
+import { expect, test } from 'vitest';
 import { montarContexto, type ConfigValidacao } from './contexto';
 import { validarPdfaDeclaracao } from './pdfaDeclaracao';
 import { validarPdfaEstrutura } from './pdfaEstrutura';
 import type { TipoDetectado } from '../tipos';
-import { gerarTodas } from '../../scripts/gerar-fixtures';
+import { lerFixture } from '../../scripts/lib/ler-fixture';
 
-let fx: Record<string, Uint8Array>;
-beforeAll(async () => {
-  fx = await gerarTodas();
-}, 60_000);
+const fx = new Proxy({} as Record<string, Uint8Array>, {
+  get: (_t, p) => lerFixture(String(p)),
+});
 
 const cfg = (over: Partial<ConfigValidacao['pdfa']>): ConfigValidacao => ({
   pdfa: { pdfaObrigatorio: true, pdfaGravidade: 'aviso', pdfaPartesAceitas: [1, 2, 3, 4], ...over },
