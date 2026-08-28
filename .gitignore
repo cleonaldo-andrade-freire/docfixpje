@@ -6,3 +6,6 @@ playwright-report
 /fixtures
 .DS_Store
 *.local
+
+# Playwright
+.playwright
