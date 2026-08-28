@@ -56,7 +56,9 @@ export async function corrigirArquivo(params: {
 
   const cod = new Set(ocorrencias.map((o) => o.codigo));
 
-  if (cod.has('ARQUIVO_CRIPTOGRAFADO') || cod.has('PDFA_CRIPTOGRAFADO')) {
+  // PDFA_CRIPTOGRAFADO (restrições, abre sem senha) É corrigível: o Ghostscript
+  // remove a cifra ao reescrever. Só ARQUIVO_CRIPTOGRAFADO (não abre) bloqueia.
+  if (cod.has('ARQUIVO_CRIPTOGRAFADO')) {
     return {
       estadoDestino: 'nao_corrigivel',
       resultado: { ...RESULTADO_VAZIO },

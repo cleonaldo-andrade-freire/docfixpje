@@ -104,12 +104,14 @@ function pdfSimples(texto = 'Documento ficticio simples. Sem assinatura. Sem PDF
   return b.build({ root: catalogo });
 }
 
-function pdfAssinado(id: CertAutoassinado, comDocMDP = false): Uint8Array {
+function pdfAssinado(id: CertAutoassinado, opts: { comDocMDP?: boolean; comEncrypt?: boolean } = {}): Uint8Array {
+  const { comDocMDP = false, comEncrypt = false } = opts;
   const b = new PdfBuilder();
   const sigContents = assinaturaCmsHex(id);
   const sig = b.reservar();
   const campo = b.reservar();
   const acroform = b.reservar();
+  const enc = comEncrypt ? b.reservar() : null;
 
   const permsRef = comDocMDP ? b.reservar() : null;
   const catalogoExtra =
@@ -139,7 +141,22 @@ function pdfAssinado(id: CertAutoassinado, comDocMDP = false): Uint8Array {
       `<< /DocMDP << /Type /TransformParams /P 2 /V /1.2 >> >>`,
     );
   }
-  return b.build({ root: catalogo });
+  if (enc !== null) {
+    b.colocar(
+      enc,
+      `<< /Filter /Standard /V 2 /R 3 /Length 128 /P -3904 ` +
+        `/O <${'41'.repeat(32)}> /U <${'42'.repeat(32)}> >>`,
+    );
+  }
+  return b.build({
+    root: catalogo,
+    ...(enc !== null
+      ? {
+          trailerExtra:
+            `/Encrypt ${enc} 0 R /ID [ <31323334353637383930313233343536> <31323334353637383930313233343536> ]`,
+        }
+      : {}),
+  });
 }
 
 /** PDF limpo (sem AcroForm/assinatura), com o texto exato pedido. Simula o que
@@ -276,7 +293,9 @@ function mp4(payloadMdat: Buffer): Uint8Array {
 
 async function assertCarregaNoPdfLib(nome: string, bytes: Uint8Array): Promise<void> {
   try {
-    await PDFDocument.load(bytes, { updateMetadata: false });
+    // ignoreEncryption: as fixtures com /Encrypt de restrições abrem assim
+    // (é o que `carregarPdf` faz).
+    await PDFDocument.load(bytes, { updateMetadata: false, ignoreEncryption: true });
   } catch (e) {
     throw new Error(`fixture ${nome} deveria carregar no pdf-lib mas falhou: ${(e as Error).message}`);
   }
@@ -295,7 +314,9 @@ export async function gerarTodas(): Promise<Record<string, Uint8Array>> {
       'Documento ficticio COM assinatura digital embarcada (fixture).',
     ),
     'campo-sig-vazio.pdf': pdfCampoSigVazio(),
-    'docmdp.pdf': pdfAssinado(id, true),
+    'docmdp.pdf': pdfAssinado(id, { comDocMDP: true }),
+    // caso real: CTPS Digital — assinado E com /Encrypt de restrições (abre sem senha)
+    'assinado-criptografado.pdf': pdfAssinado(id, { comEncrypt: true }),
     'pdfa-1b.pdf': pdfPdfa(1, 'B'),
     'pdfa-2b-transparencia.pdf': pdfPdfa(2, 'B', { comTransparencia: true }),
     'declara-a1b-sem-oi.pdf': pdfPdfa(1, 'B', { comOutputIntent: false }),
@@ -323,6 +344,7 @@ export async function gerarTodas(): Promise<Record<string, Uint8Array>> {
     'assinado.pdf',
     'assinado-e-sem-pdfa.pdf',
     'assinado-corrigido-ok.pdf',
+    'assinado-criptografado.pdf',
     'campo-sig-vazio.pdf',
     'docmdp.pdf',
     'pdfa-1b.pdf',

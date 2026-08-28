@@ -45,7 +45,9 @@ export function argumentosGs(params: {
   nivel: NivelCompressao;
 }): string[] {
   const { estrategia, nivel } = params;
-  const base = ['-dNOPAUSE', '-dBATCH', '-dQUIET'];
+  // -sPDFPassword= (vazio): abre PDFs criptografados só com senha de dono /
+  // restrições (CTPS Digital, gov.br). A reescrita já sai sem cifra.
+  const base = ['-dNOPAUSE', '-dBATCH', '-dQUIET', '-sPDFPassword='];
 
   if (estrategia === 'rasterizado') {
     return [

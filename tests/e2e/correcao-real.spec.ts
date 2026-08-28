@@ -33,6 +33,23 @@ test.describe('motor real (Ghostscript-WASM)', () => {
     );
   });
 
+  test('PDF assinado E criptografado → a correção termina (não trava no /Encrypt)', async ({ page }) => {
+    // A fixture tem /Encrypt sintético (chaves /O /U falsas), que o Ghostscript
+    // real recusa — então aqui o esperado é `correcao_falhou`, não `corrigido`.
+    // O importante: o motor é chamado com -sPDFPassword= e o fluxo NÃO trava.
+    // O caso "abre sem senha e corrige" fica coberto por correcao.spec.ts
+    // (motor de teste) e foi verificado à mão com uma CTPS Digital real.
+    test.setTimeout(180_000);
+    await page.goto('/');
+    await page.getByLabel(/selecionar arquivos/i).setInputFiles(fx('assinado-criptografado.pdf'));
+    await page.getByRole('button', { name: /^validar$/i }).click();
+    const linha = page.getByRole('listitem', { name: 'assinado-criptografado.pdf' });
+    await linha.getByRole('button', { name: /tentar corrigir/i }).click();
+    await expect(
+      linha.getByText(/Corrigido — revalidado com sucesso|Não foi possível corrigir automaticamente/),
+    ).toBeVisible({ timeout: 150_000 });
+  });
+
   test('sem rede: nenhuma requisição a terceiros durante a correção real', async ({ page }) => {
     test.setTimeout(180_000);
     const externas: string[] = [];

@@ -10,12 +10,10 @@ export interface OpcoesValidacao {
   config?: ConfigValidacao;
 }
 
-const NAO_CORRIGIVEL = new Set([
-  'ARQUIVO_CRIPTOGRAFADO',
-  'ARQUIVO_CORROMPIDO',
-  'FORMATO_NAO_SUPORTADO',
-  'PDFA_CRIPTOGRAFADO',
-]);
+// PDFA_CRIPTOGRAFADO NÃO entra aqui: um PDF com restrições que abre sem senha é
+// corrigível (o Ghostscript remove a cifra ao reescrever). Só um arquivo que
+// não abre de jeito nenhum (ARQUIVO_CRIPTOGRAFADO) é não corrigível.
+const NAO_CORRIGIVEL = new Set(['ARQUIVO_CRIPTOGRAFADO', 'ARQUIVO_CORROMPIDO', 'FORMATO_NAO_SUPORTADO']);
 
 export async function validarArquivo(
   nomeArquivo: string,

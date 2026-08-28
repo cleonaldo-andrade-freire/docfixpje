@@ -15,6 +15,7 @@ test('gera todas as fixtures esperadas', () => {
     'assinado.pdf',
     'assinado-e-sem-pdfa.pdf',
     'assinado-corrigido-ok.pdf',
+    'assinado-criptografado.pdf',
     'campo-sig-vazio.pdf',
     'docmdp.pdf',
     'pdfa-1b.pdf',

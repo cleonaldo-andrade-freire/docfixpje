@@ -12,9 +12,16 @@ describe('carregarPdf', () => {
     expect(r.ok).toBe(true);
   });
 
-  test('PDF com /Encrypt -> ARQUIVO_CRIPTOGRAFADO', async () => {
+  test('PDF com /Encrypt que abre (restrições) -> ok, encriptado:true', async () => {
     const r = await carregarPdf(fx['criptografado.pdf']!);
-    expect(r).toEqual({ ok: false, motivo: 'ARQUIVO_CRIPTOGRAFADO' });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.encriptado).toBe(true);
+  });
+
+  test('bytes lixo com "encrypted" na mensagem -> ARQUIVO_CRIPTOGRAFADO', async () => {
+    // pdf-lib não abre nem ignorando a cifra
+    const r = await carregarPdf(new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0, 1, 2, 3]));
+    expect(r.ok).toBe(false);
   });
 
   test('bytes lixo -> ARQUIVO_CORROMPIDO', async () => {

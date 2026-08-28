@@ -29,11 +29,20 @@ test('assinado → Tentar corrigir → corrigido, com download (motor de teste)'
 // O fluxo "corrigido" com motor REAL (Ghostscript-WASM) vive em
 // correcao-real.spec.ts; aqui, o motor de teste (?e2e=1) dá determinismo à UI.
 
-test('PDF criptografado → nao_corrigivel, sem botão corrigir', async ({ page }) => {
+test('PDF com /Encrypt de restrições → validado sem erro de senha', async ({ page }) => {
   await validar(page, 'criptografado.pdf');
   const linha = page.getByRole('listitem', { name: 'criptografado.pdf' });
-  await expect(linha.getByText(/protegido por senha/i).first()).toBeVisible();
-  await expect(linha.getByRole('button', { name: /tentar corrigir/i })).toHaveCount(0);
+  await expect(linha.getByText('Pronto para anexar ao PJe')).toBeVisible();
+  await expect(linha.getByText(/protegido por senha/i)).toHaveCount(0);
+});
+
+test('PDF assinado E criptografado → Tentar corrigir → corrigido (motor de teste)', async ({ page }) => {
+  await page.goto('/?e2e=1');
+  await page.getByLabel(/selecionar arquivos/i).setInputFiles(fx('assinado-criptografado.pdf'));
+  await page.getByRole('button', { name: /^validar$/i }).click();
+  const linha = page.getByRole('listitem', { name: 'assinado-criptografado.pdf' });
+  await linha.getByRole('button', { name: /tentar corrigir/i }).click();
+  await expect(linha.getByText('Corrigido — revalidado com sucesso')).toBeVisible({ timeout: 15_000 });
 });
 
 test('MP4 acima do limite → sem correção automática, só orientação (decisão P2-1)', async ({ page }) => {

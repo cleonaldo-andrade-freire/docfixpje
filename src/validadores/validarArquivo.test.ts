@@ -46,10 +46,19 @@ describe('spec §14.1', () => {
     expect(acima.apto).toBe(false);
   });
 
-  test('PDF com senha -> ARQUIVO_CRIPTOGRAFADO, corrigivel:false', async () => {
+  test('PDF com /Encrypt que abre (restrições) -> NÃO é ARQUIVO_CRIPTOGRAFADO', async () => {
     const r = await val('criptografado.pdf');
-    expect(cod(r)).toContain('ARQUIVO_CRIPTOGRAFADO');
-    expect(r.corrigivel).toBe(false);
+    expect(cod(r)).not.toContain('ARQUIVO_CRIPTOGRAFADO');
+    // sem assinatura, só avisos de PDF/A -> apto
+    expect(r.apto).toBe(true);
+  });
+
+  test('PDF assinado E criptografado (CTPS Digital) -> inapto, corrigível', async () => {
+    const r = await val('assinado-criptografado.pdf');
+    expect(cod(r)).toContain('ASSINATURA_PRESENTE');
+    expect(cod(r)).not.toContain('ARQUIVO_CRIPTOGRAFADO');
+    expect(r.apto).toBe(false);
+    expect(r.corrigivel).toBe(true);
   });
 
   test('.exe renomeado -> FORMATO_NAO_SUPORTADO', async () => {

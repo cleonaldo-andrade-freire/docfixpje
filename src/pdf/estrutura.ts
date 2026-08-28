@@ -10,20 +10,33 @@ import { PDFDocument, EncryptedPDFError } from 'pdf-lib';
  */
 
 export type CargaPdf =
-  | { ok: true; doc: PDFDocument }
+  | { ok: true; doc: PDFDocument; encriptado: boolean }
   | { ok: false; motivo: 'ARQUIVO_CRIPTOGRAFADO' | 'ARQUIVO_CORROMPIDO' };
 
 export async function carregarPdf(bytes: Uint8Array): Promise<CargaPdf> {
   try {
     const doc = await PDFDocument.load(bytes, { updateMetadata: false });
-    return { ok: true, doc };
+    return { ok: true, doc, encriptado: false };
   } catch (e) {
     // O pdf-lib lança EncryptedPDFError, mas o transpile do pacote quebra a
     // cadeia de protótipos e `instanceof` falha em parte dos ambientes — daí o
     // fallback pela mensagem (estável entre versões).
     const msg = e instanceof Error ? e.message : String(e);
-    if (e instanceof EncryptedPDFError || /\bencrypted\b/i.test(msg)) {
-      return { ok: false, motivo: 'ARQUIVO_CRIPTOGRAFADO' };
+    const pareceCripto = e instanceof EncryptedPDFError || /\bencrypted\b/i.test(msg);
+    if (pareceCripto) {
+      // Muitos documentos oficiais (CTPS Digital, gov.br, CNIS) têm /Encrypt só
+      // com senha de dono / restrições e abrem SEM senha. Tenta ignorar a cifra:
+      // se a estrutura abre, o arquivo é utilizável e a correção (Ghostscript)
+      // remove a cifra. Só é "protegido por senha" se nem assim abrir.
+      try {
+        const doc = await PDFDocument.load(bytes, {
+          updateMetadata: false,
+          ignoreEncryption: true,
+        });
+        return { ok: true, doc, encriptado: true };
+      } catch {
+        return { ok: false, motivo: 'ARQUIVO_CRIPTOGRAFADO' };
+      }
     }
     return { ok: false, motivo: 'ARQUIVO_CORROMPIDO' };
   }

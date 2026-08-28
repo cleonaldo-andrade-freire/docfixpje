@@ -52,7 +52,7 @@ function fabricaComResposta(msgs: DaCorrecao[] | ((m: ParaCorrecao) => DaCorreca
   return f;
 }
 
-test('PDF criptografado -> nao_corrigivel, sem criar worker', async () => {
+test('PDF que exige senha (ARQUIVO_CRIPTOGRAFADO) -> nao_corrigivel, sem criar worker', async () => {
   const fab = fabricaComResposta([]);
   const s = await corrigirArquivo({
     nomeArquivo: 'x.pdf',
@@ -65,6 +65,22 @@ test('PDF criptografado -> nao_corrigivel, sem criar worker', async () => {
   expect(s.estadoDestino).toBe('nao_corrigivel');
   expect(s.orientacao).toMatch(/protegido por senha/i);
   expect(fab.criados).toBe(0);
+});
+
+test('PDF com restrições (PDFA_CRIPTOGRAFADO, abre sem senha) -> vai para o worker', async () => {
+  const fab = fabricaComResposta([
+    { tipo: 'resultado', resultado: resultadoOk, bufferCorrigido: new Uint8Array([9]).buffer },
+  ]);
+  const s = await corrigirArquivo({
+    nomeArquivo: 'ctps.pdf',
+    tipo: 'application/pdf',
+    bytes: buf(),
+    ocorrencias: [oc('ASSINATURA_PRESENTE'), oc('PDFA_CRIPTOGRAFADO')],
+    cb,
+    fabricaWorker: fab,
+  });
+  expect(s.estadoDestino).toBe('corrigido');
+  expect(fab.criados).toBe(1);
 });
 
 test('MP4 -> nao_corrigivel com orientação de mídia, sem worker', async () => {
