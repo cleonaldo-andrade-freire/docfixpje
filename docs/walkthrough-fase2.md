@@ -26,11 +26,15 @@ corrigirArquivo()  ── cripto / mídia → nao_corrigivel (sem worker)
 pdf.worker  (o MESMO worker da validação — pdf-lib embarcado uma vez só)
   │  carregarMotor() → Ghostscript-WASM via motorGs.ts (se indisponível: MotorIndisponivel)
   ▼
-corrigirPdf()   UMA invocação do motor por tentativa (spec §8.1)
-  ├─ precisa comprimir? itera COMPRESSAO_TENTATIVAS, para no 1º < limite
-  ├─ argumentosGs()  → -dPDFA=2 -sDEVICE=pdfwrite -dPDFSETTINGS=<nível> …
+corrigirPdf()   estratégias em ordem, da mais fiel para a mais agressiva
+  ├─ fiel        → pdfwrite /prepress, SEM reamostrar imagem, JPEGs originais
+  │                intactos (pass-through). Remove a assinatura. Padrão.
+  ├─ pdfa        → fiel + -dPDFA=2, só se `fiel` não der arquivo apto
+  ├─ comprimir   → reamostra /ebook→/screen, SÓ se o arquivo passa de 10 MB
+  ├─ rasterizado → pdfimage24 (impressora virtual), último recurso p/ assinado
   ├─ revalidar()     → roda os MESMOS validadores da Fase 1 no arquivo de saída
-  ├─ textoPreservado() → Jaccard sobre o texto extraído (bloqueante p/ assinado)
+  ├─ textoPreservado() → Jaccard sobre o texto extraído (bloqueante p/ assinado,
+  │                      exceto rasterizado)
   └─ sucesso = revalidacao.apto && (!assinado || textoPreservado)   NUNCA o código do motor
 ```
 
