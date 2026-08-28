@@ -1,0 +1,40 @@
+.raiz {
+  position: relative;
+  border: 2px dashed var(--cor-borda);
+  border-radius: var(--raio);
+  padding: 28px 20px;
+  text-align: center;
+  background: var(--cor-fundo-2);
+  transition: border-color var(--dur-transicao) ease, background-color var(--dur-transicao) ease;
+}
+
+.arrastando {
+  border-color: var(--cor-foco);
+  background: var(--cor-neutro-fundo);
+}
+
+.titulo {
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+.ajuda {
+  color: var(--cor-texto-2);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.recusa {
+  margin-top: 10px;
+  color: var(--cor-erro);
+  font-weight: 600;
+  font-size: 0.92rem;
+}

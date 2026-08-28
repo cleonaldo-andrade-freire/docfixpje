@@ -26,6 +26,12 @@ export const LIMITES = {
   TIMEOUT_CORRECAO_PDF_MS: 120_000,
 } as const;
 
+/**
+ * Endereço oficial da ferramenta, exibido na interface (spec §10.4). Editável
+ * só aqui. Ajustar quando o domínio de produção for definido.
+ */
+export const ENDERECO_OFICIAL = 'https://validador-pje.exemplo.br';
+
 export const PDFA = {
   /** Se falso, a Regra 3 não produz nenhuma ocorrência (spec §7.3). */
   pdfaObrigatorio: true,

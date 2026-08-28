@@ -1,0 +1,15 @@
+.raiz {
+  border-left: 3px solid var(--cor-ok);
+  background: var(--cor-ok-fundo);
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+.frase {
+  margin: 0;
+  font-weight: 600;
+}
+.endereco {
+  margin: 4px 0 0;
+  font-size: 0.88rem;
+  color: var(--cor-texto-2);
+}
