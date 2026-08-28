@@ -21,13 +21,19 @@ type FabricaEmscripten = (config: Record<string, unknown>) => Promise<{
 
 let fabricaMemo: Promise<FabricaEmscripten> | null = null;
 
+function urlGlue(): string {
+  // Montada em runtime: o Vite dev não pode resolvê-la estaticamente (arquivos
+  // de /public não podem ser importados como módulo do código-fonte).
+  const origem =
+    typeof self !== 'undefined' && self.location ? self.location.origin : '';
+  return `${origem}/${['motores', 'gs.mjs'].join('/')}`;
+}
+
 async function carregarFabrica(): Promise<FabricaEmscripten> {
   if (!fabricaMemo) {
-    // Import em runtime do glue servido pela origem — fora do bundler.
-    const url = '/motores/gs.mjs';
-    fabricaMemo = (import(/* @vite-ignore */ url) as Promise<{ default: FabricaEmscripten }>).then(
-      (m) => m.default,
-    );
+    fabricaMemo = (
+      import(/* @vite-ignore */ urlGlue()) as Promise<{ default: FabricaEmscripten }>
+    ).then((m) => m.default);
   }
   return fabricaMemo;
 }
