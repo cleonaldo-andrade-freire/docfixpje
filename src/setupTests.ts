@@ -1,4 +1,8 @@
 import '@testing-library/jest-dom/vitest';
+import { expect } from 'vitest';
+import { toHaveNoViolations } from 'jest-axe';
+
+expect.extend(toHaveNoViolations);
 
 // jsdom não implementa Blob.prototype.arrayBuffer / .text (navegadores reais sim).
 if (typeof Blob !== 'undefined' && typeof Blob.prototype.arrayBuffer !== 'function') {
