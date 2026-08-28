@@ -19,7 +19,7 @@ export async function processarCorrecao(
   responder: (m: DaCorrecao) => void,
 ): Promise<void> {
   try {
-    if (msg.e2e) __setMotorParaTeste(motorFalsoE2E);
+    if (msg.e2e) __setMotorParaTeste(motorFalsoE2E(msg.e2e));
     if (!motorJaCarregado()) responder({ tipo: 'etapa', mensagem: 'Carregando o motor de correção…' });
 
     let motor;

@@ -142,6 +142,14 @@ function pdfAssinado(id: CertAutoassinado, comDocMDP = false): Uint8Array {
   return b.build({ root: catalogo });
 }
 
+/** PDF limpo (sem AcroForm/assinatura), com o texto exato pedido. Simula o que
+ *  uma correção bem-sucedida produz a partir de `assinado.pdf`. */
+function pdfLimpoComTexto(texto: string): Uint8Array {
+  const b = new PdfBuilder();
+  const { catalogo } = paginaBasica(b, { texto });
+  return b.build({ root: catalogo });
+}
+
 function pdfCampoSigVazio(): Uint8Array {
   const b = new PdfBuilder();
   const campo = b.reservar();
@@ -282,6 +290,10 @@ export async function gerarTodas(): Promise<Record<string, Uint8Array>> {
     'simples-sem-pdfa.pdf': pdfSimples('Documento ficticio comum, sem metadados PDF/A.'),
     'assinado.pdf': pdfAssinado(id),
     'assinado-e-sem-pdfa.pdf': pdfAssinado(id), // assinado + sem XMP/OutputIntent
+    // o que uma correção boa produz a partir de assinado.pdf: mesmo texto, sem assinatura
+    'assinado-corrigido-ok.pdf': pdfLimpoComTexto(
+      'Documento ficticio COM assinatura digital embarcada (fixture).',
+    ),
     'campo-sig-vazio.pdf': pdfCampoSigVazio(),
     'docmdp.pdf': pdfAssinado(id, true),
     'pdfa-1b.pdf': pdfPdfa(1, 'B'),
@@ -310,6 +322,7 @@ export async function gerarTodas(): Promise<Record<string, Uint8Array>> {
     'simples-sem-pdfa.pdf',
     'assinado.pdf',
     'assinado-e-sem-pdfa.pdf',
+    'assinado-corrigido-ok.pdf',
     'campo-sig-vazio.pdf',
     'docmdp.pdf',
     'pdfa-1b.pdf',

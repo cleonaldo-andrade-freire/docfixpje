@@ -38,14 +38,24 @@ que é metade do valor da Fase 2.
   domínio oficial.
 - Qualquer fork hospedado publicamente herda a AGPL: precisa publicar o fonte.
 
-## Pendência técnica (não altera a decisão de licença)
+## Motor integrado
 
-Nenhum build de Ghostscript-WASM pronto para uso foi encontrado:
-`@jspawn/ghostscript-wasm@0.0.2` é pré-alfa e não instancia (nem no navegador de
-forma confiável, nem em Node). Enquanto não houver um build funcional
-(compilar de fonte via emsdk, ou um pacote maduro), a Fase 2 opera em
-**degradação graciosa**: o motor reporta indisponível e a linha vai para
-`correcao_falhou` com a instrução de correção manual (fallback previsto em
-§8.2). Toda a camada acima do motor — pipeline, garantias, UI, testes — está
-pronta e o motor é injetável (`src/correcao/motor.ts`), então integrar um build
-real não toca em nenhuma outra parte do código (spec §15).
+`@jspawn/ghostscript-wasm@0.0.2` **funciona no navegador** (não em Node — daí
+os testes unitários usarem um motor dublê e a verificação real ser via
+Playwright/Chromium em `tests/e2e/correcao-real.spec.ts`).
+
+- `scripts/preparar-motor.ts` copia `gs.<hash>.wasm` + o glue Emscripten para
+  `public/motores/` no `postinstall`/`prebuild`. O `.wasm` (~15 MB) é gerado,
+  **não versionado** (`.gitignore`), reproduzível a partir do pacote pinado.
+- `src/correcao/motorGs.ts` adapta o build à interface `MotorPdf`. Carregado
+  sob demanda, dentro do worker, servido pela própria origem.
+- `public/_headers`: `/motores/*.wasm` com `Cache-Control: immutable`,
+  `Access-Control-Allow-Origin` restrito ao domínio oficial e `CORP: same-origin`.
+- Extração de texto para a checagem de preservação: `fflate` infla os content
+  streams `/FlateDecode` da saída do Ghostscript (sem pdfjs).
+
+E2E comprovado: `assinado.pdf` → "Tentar corrigir" → **"Corrigido — revalidado
+com sucesso"** em ~3 s, texto preservado, zero requisições a terceiros.
+
+Se o build atual se mostrar limitado em produção (parte-alfa), trocar por um
+Ghostscript compilado de fonte via emsdk toca só `motorGs.ts` (spec §15).

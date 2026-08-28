@@ -26,16 +26,8 @@ test('assinado → Tentar corrigir → corrigido, com download (motor de teste)'
   await expect(page.getByText(/documento novo/i)).toBeVisible();
 });
 
-test('sem motor real: Tentar corrigir → correcao_falhou + orientação manual', async ({ page }) => {
-  await validar(page, 'assinado.pdf'); // sem ?e2e
-  const linha = page.getByRole('listitem', { name: 'assinado.pdf' });
-  await linha.getByRole('button', { name: /tentar corrigir/i }).click();
-
-  await expect(linha.getByText('Não foi possível corrigir automaticamente')).toBeVisible({
-    timeout: 15_000,
-  });
-  await expect(linha.getByText(/remova a assinatura reimprimindo|reimprima o pdf/i)).toBeVisible();
-});
+// O fluxo "corrigido" com motor REAL (Ghostscript-WASM) vive em
+// correcao-real.spec.ts; aqui, o motor de teste (?e2e=1) dá determinismo à UI.
 
 test('PDF criptografado → nao_corrigivel, sem botão corrigir', async ({ page }) => {
   await validar(page, 'criptografado.pdf');

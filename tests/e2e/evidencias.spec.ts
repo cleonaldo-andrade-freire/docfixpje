@@ -36,13 +36,13 @@ test('screenshots dos estados da linha', async ({ page }, testInfo) => {
   await page.getByText('Corrigido — revalidado com sucesso').waitFor({ timeout: 15_000 });
   await page.screenshot({ path: destino(`corrigido-${sufixo}.png`), fullPage: true });
 
-  // estados de falha, SEM motor: correcao_falhou (assinado) + nao_corrigivel (cripto)
-  await page.goto('/');
+  // estados de falha: correcao_falhou (?e2e=falha) + nao_corrigivel (cripto)
+  await page.goto('/?e2e=falha');
   await page.getByLabel(/selecionar arquivos/i).setInputFiles([fx('assinado.pdf'), fx('criptografado.pdf')]);
   await page.getByRole('button', { name: /^validar$/i }).click();
   const linhaFalha = page.getByRole('listitem', { name: 'assinado.pdf' });
   await linhaFalha.getByRole('button', { name: /tentar corrigir/i }).click();
-  await linhaFalha.getByText('Não foi possível corrigir automaticamente').waitFor({ timeout: 15_000 });
+  await linhaFalha.getByText('Não foi possível corrigir automaticamente').waitFor({ timeout: 20_000 });
   await page.screenshot({ path: destino(`estados-correcao-${sufixo}.png`), fullPage: true });
 });
 

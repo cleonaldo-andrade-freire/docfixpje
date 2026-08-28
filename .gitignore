@@ -9,3 +9,7 @@ playwright-report
 
 # Playwright
 .playwright
+
+# motor de correção (gerado de @jspawn/ghostscript-wasm por scripts/preparar-motor.ts)
+public/motores/
+src/config/motores.ts

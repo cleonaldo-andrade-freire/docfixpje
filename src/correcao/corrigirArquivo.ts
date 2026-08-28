@@ -4,7 +4,7 @@ import type { ConfigValidacao } from '../validadores/contexto';
 import { LIMITES } from '../config/limites';
 import { executarComTimeout, TIMEOUT } from './executarComTimeout';
 import type { ParaCorrecao, DaCorrecao } from './protocoloCorrecao';
-import { e2eAtivo } from './ganchoE2E';
+import { modoE2E } from './ganchoE2E';
 
 /**
  * Entrypoint de correção, desacoplado do motor e da UI (spec §15).
@@ -126,7 +126,7 @@ export async function corrigirArquivo(params: {
       buffer: bytes,
       ocorrencias,
       ...(config ? { config } : {}),
-      ...(e2eAtivo() ? { e2e: true } : {}),
+      ...(modoE2E() ? { e2e: modoE2E()! } : {}),
     };
     worker.postMessage(msg, [bytes]);
   });

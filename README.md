@@ -17,12 +17,11 @@ arquivo sai da máquina.
 - **Fase 1 — Validação:** completa. Upload, botão Validar, processamento visível
   por arquivo, diagnóstico verde/vermelho, orientação textual de correção
   manual, descarte, service worker offline, cabeçalhos de segurança.
-- **Fase 2 — Correção automática:** pipeline, UI e testes completos, sob
-  **AGPL-3.0**. "Tentar corrigir" reescreve o PDF numa passada única (remover
-  assinatura + PDF/A + comprimir), sempre **revalidando o arquivo de saída**
-  antes de reportar sucesso. Falta apenas um build funcional de Ghostscript-WASM
-  para a transformação real — sem ele, a correção cai em `correcao_falhou` com
-  instrução manual. Detalhes e ponto de integração: `docs/walkthrough-fase2.md`.
+- **Fase 2 — Correção automática:** completa, sob **AGPL-3.0**. "Tentar
+  corrigir" reescreve o PDF com **Ghostscript-WASM** numa passada única (remover
+  assinatura + PDF/A + comprimir), sempre **revalidando o arquivo de saída** e
+  checando preservação de texto antes de reportar sucesso. Comprovado por e2e no
+  Chromium. Detalhes: `docs/walkthrough-fase2.md`.
 
 ## Rodar
 

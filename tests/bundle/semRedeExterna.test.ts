@@ -79,7 +79,10 @@ test('o worker de PDF é chunk separado, não entra no index.html (spec §14.5)'
   expect(readdirSync(distAssets).some((f) => /^pdf\.worker-.*\.js$/.test(f))).toBe(true);
 });
 
-test('nenhum .wasm no bundle da Fase 2 (motor real ainda não embarcado)', () => {
-  const wasm = readdirSync(distAssets).filter((f) => f.endsWith('.wasm'));
-  expect(wasm).toEqual([]);
+test('o .wasm do motor fica em /motores/, fora de /assets/ e do index.html', () => {
+  expect(readdirSync(distAssets).filter((f) => f.endsWith('.wasm'))).toEqual([]);
+  const html = readFileSync(join(raiz, 'dist', 'index.html'), 'utf8');
+  expect(html).not.toMatch(/\.wasm/);
+  const motores = readdirSync(join(raiz, 'dist', 'motores'));
+  expect(motores.some((f) => /^gs\.[0-9a-f]{12}\.wasm$/.test(f))).toBe(true);
 });

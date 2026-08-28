@@ -33,6 +33,8 @@ export default defineConfig({
   plugins: [react()],
   server: { headers: headersDev },
   preview: { headers: headersProducao },
+  // Worker como ES module: o worker faz import() dinâmico do adaptador do motor.
+  worker: { format: 'es' },
   build: {
     rollupOptions: {
       input: {

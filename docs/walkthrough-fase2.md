@@ -1,8 +1,10 @@
 # Walkthrough — Fase 2 (Correção automática)
 
-Estado: **pipeline, UI e testes completos.** O único ponto pendente é um build
-funcional de Ghostscript-WASM (ver "Pendência técnica"). Sem ele, a Fase 2 opera
-em degradação graciosa e a Fase 1 continua íntegra.
+Estado: **completa e funcionando.** O Ghostscript-WASM está embarcado e a
+correção real foi comprovada por e2e (Chromium): `assinado.pdf` → "Tentar
+corrigir" → "Corrigido — revalidado com sucesso", texto preservado, sem rede.
+Se o motor estiver indisponível, a Fase 2 degrada para `correcao_falhou` +
+instrução manual e a Fase 1 continua íntegra.
 
 ## Decisões (docs/decisoes/)
 
@@ -22,7 +24,7 @@ corrigirArquivo()  ── cripto / mídia → nao_corrigivel (sem worker)
   │  timeout (LIMITES.TIMEOUT_CORRECAO_PDF_MS) → aborta o worker, correcao_falhou
   ▼
 pdf.worker  (o MESMO worker da validação — pdf-lib embarcado uma vez só)
-  │  carregarMotor()  →  MotorPdf  (injetável; hoje: MotorIndisponivel)
+  │  carregarMotor() → Ghostscript-WASM via motorGs.ts (se indisponível: MotorIndisponivel)
   ▼
 corrigirPdf()   UMA invocação do motor por tentativa (spec §8.1)
   ├─ precisa comprimir? itera COMPRESSAO_TENTATIVAS, para no 1º < limite
@@ -44,46 +46,38 @@ corrigirPdf()   UMA invocação do motor por tentativa (spec §8.1)
 | Sem rede | worker + CSP `connect-src 'self'` | `tests/e2e/correcao.spec.ts` |
 | Preservação de texto | `preservacaoTexto.ts` | `corrigirPdf.test.ts`, `preservacaoTexto.test.ts` |
 
-## Onde ligar o motor real
+## Motor (Ghostscript-WASM)
 
-**Um arquivo:** `src/correcao/motor.ts` → função `criarMotorReal()`.
-Hoje retorna `null` (→ `MotorIndisponivel`). Implementação esperada:
+- **Pacote:** `@jspawn/ghostscript-wasm` (AGPL-3.0), pinado. Funciona no
+  navegador; **não** em Node — por isso os testes unitários usam um motor dublê
+  e a prova real é `tests/e2e/correcao-real.spec.ts` (Chromium).
+- **`scripts/preparar-motor.ts`** (roda no `postinstall`/`prebuild`): copia
+  `gs.<hash>.wasm` (~15 MB) + o glue Emscripten para `public/motores/` e escreve
+  `src/config/motores.ts` com o caminho. O `.wasm` é **gerado, não commitado**.
+- **`src/correcao/motorGs.ts`** adapta o build à interface `MotorPdf`: import
+  em runtime de `/motores/gs.mjs` (fora do bundler), FS virtual
+  (`/entrada.pdf` → `callMain(args)` → `/saida.pdf`). Carregado sob demanda, no
+  worker.
+- **`public/_headers`:** `/motores/*.wasm` → `Cache-Control: immutable` +
+  `Access-Control-Allow-Origin` restrito + `CORP: same-origin`.
+- **Preservação de texto:** `fflate` infla os content streams `/FlateDecode` da
+  saída do Ghostscript antes de comparar (`preservacaoTexto.ts`).
 
-```ts
-async function criarMotorReal(): Promise<MotorPdf | null> {
-  const gs = await import(/* @vite-ignore */ '<pacote-ghostscript-wasm>');
-  // instanciar com o .wasm servido de /motores/gs.<hash>.wasm (mesma origem),
-  // FS virtual: escrever /entrada.pdf, rodar args, ler /saida.pdf
-  return {
-    async executar(entrada, args) { /* … */ return { codigo, bytes, log }; },
-  };
-}
-```
-
-Nada mais muda: `corrigirPdf`, a UI, o worker e os testes já falam só com a
-interface `MotorPdf` (spec §15). O `.wasm` entra como asset estático versionado
-por hash, com `Cache-Control: immutable` e `Access-Control-Allow-Origin`
-restrito ao domínio oficial (acrescentar em `public/_headers`).
-
-### Pendência técnica
-
-`@jspawn/ghostscript-wasm@0.0.2` (o único pacote npm de Ghostscript-WASM) é
-pré-alfa e não instancia — nem em Node, nem de forma confiável no navegador.
-Opções para destravar: compilar Ghostscript→WASM de fonte via emsdk, ou aguardar
-um pacote maduro. Enquanto isso, "Tentar corrigir" leva a `correcao_falhou` com
-a instrução de correção manual (fallback previsto em §8.2).
+Trocar de motor (ex.: um Ghostscript compilado de fonte via emsdk, se o build
+atual se mostrar limitado) = trocar `motorGs.ts`. Nada mais (spec §15).
 
 ## Testar
 
 ```bash
-npm test                 # inclui 43 testes de correção (pipeline + UI)
-npm run test:e2e         # inclui tests/e2e/correcao.spec.ts (5 x 4 projetos)
-npm run test:bundle      # entrada < 120 KB gz, total < 300 KB gz, ZERO .wasm
+npm test                 # 200 testes (inclui correção: pipeline + UI + preservação de texto)
+npm run test:e2e         # inclui correcao.spec.ts (motor dublê) e correcao-real.spec.ts (Ghostscript real)
+npm run test:bundle      # entrada enxuta; .wasm isolado em /motores/, fora de /assets/ e do index.html
 ```
 
-**Gancho de e2e:** `?e2e=1` na URL injeta um motor falso (`ganchoE2E.ts`) que
-remove a assinatura preservando o texto — só para o Playwright exercitar o fluxo
-`corrigido`. Sem o parâmetro, o gancho nunca roda.
+**Ganchos de e2e** (nunca rodam em produção): `?e2e=1` injeta um motor dublê de
+sucesso, `?e2e=falha` um de falha — só para dar determinismo à UI. A correção
+**real** (Ghostscript-WASM) roda sem parâmetro nenhum e é coberta por
+`tests/e2e/correcao-real.spec.ts`.
 
 ## Constantes novas (`src/config/limites.ts`)
 

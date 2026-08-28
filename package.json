@@ -14,9 +14,13 @@
     "test:e2e": "playwright test",
     "test:bundle": "vite build && vitest run --config vitest.bundle.config.ts",
     "fixtures": "tsx scripts/gerar-fixtures.ts",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "postinstall": "tsx scripts/preparar-motor.ts",
+    "prebuild": "tsx scripts/preparar-motor.ts"
   },
   "dependencies": {
+    "@jspawn/ghostscript-wasm": "0.0.2",
+    "fflate": "0.8.2",
     "pdf-lib": "1.17.1",
     "react": "18.3.1",
     "react-dom": "18.3.1"

@@ -5,11 +5,11 @@
  * concreta. Trocar o motor (Ghostscript-WASM, MuPDF-WASM, um build de fonte…)
  * não toca em nenhuma outra camada.
  *
- * Estado atual: não há build de Ghostscript-WASM utilizável (ver
- * docs/decisoes/2026-08-28-licenca-motor-correcao.md). `carregarMotor()` lança
- * `MotorIndisponivel`, e a camada acima degrada para `correcao_falhou` +
- * instrução manual (fallback previsto em §8.2). Para ligar a correção real,
- * implemente `criarMotorReal()` abaixo — nada mais muda.
+ * `criarMotorReal()` carrega o Ghostscript-WASM (@jspawn/ghostscript-wasm) via
+ * `motorGs.ts`. Se o build não estiver disponível ou falhar ao instanciar,
+ * `carregarMotor()` lança `MotorIndisponivel` e a camada acima degrada para
+ * `correcao_falhou` + instrução manual (fallback previsto em §8.2). Trocar de
+ * motor é trocar `motorGs.ts` — nada mais (spec §15).
  */
 
 export interface SaidaMotor {
@@ -53,12 +53,18 @@ export function motorJaCarregado(): boolean {
 }
 
 /**
- * Ponto de integração do motor real. Enquanto retorna null, a Fase 2 opera em
- * degradação graciosa. Implementar com `import('@…/ghostscript-wasm')` (ou o
- * build escolhido), carregado sob demanda e servido pela própria origem.
+ * Ponto de integração do motor real (spec §15). Carrega o adaptador do
+ * Ghostscript-WASM sob demanda; se o build não estiver disponível
+ * (`CAMINHO_MOTOR_GS` nulo) ou falhar ao instanciar, retorna null e a Fase 2
+ * opera em degradação graciosa.
  */
 async function criarMotorReal(): Promise<MotorPdf | null> {
-  return null;
+  try {
+    const { criarMotorGs } = await import('./motorGs');
+    return await criarMotorGs();
+  } catch {
+    return null;
+  }
 }
 
 /** Carrega (uma vez por sessão) o motor. Lança `MotorIndisponivel` se não houver. */
