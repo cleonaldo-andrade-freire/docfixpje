@@ -23,7 +23,7 @@ export function LinhaArquivo({
   const emAtividade = item.estado === 'validando' || item.estado === 'corrigindo';
 
   return (
-    <li className={css.raiz}>
+    <li className={css.raiz} aria-label={item.file.name}>
       <div className={css.grade}>
         <span className={css.nome} title={item.file.name}>
           {item.file.name}

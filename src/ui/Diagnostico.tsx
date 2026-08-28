@@ -11,9 +11,11 @@ export function Diagnostico({ resultado }: { resultado: ResultadoValidacao }) {
   const { ocorrencias } = resultado;
   if (resultado.apto && ocorrencias.length === 0) return null;
 
-  const orientacoes = montarOrientacaoManual(ocorrencias);
-  const temCorrecaoAutomatica = resultado.corrigivel;
+  // Linha apta (só avisos): mostra os avisos, mas não o fluxo de "como corrigir".
+  const orientacoes = resultado.apto ? [] : montarOrientacaoManual(ocorrencias);
   const criptografado = ocorrencias.some((o) => o.codigo === 'ARQUIVO_CRIPTOGRAFADO');
+  // Só linhas reprovadas ganham fluxo de correção (spec §5.6).
+  const temCorrecaoAutomatica = resultado.corrigivel && !resultado.apto;
 
   return (
     <div className={css.raiz}>

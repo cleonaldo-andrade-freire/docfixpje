@@ -1,0 +1,50 @@
+.raiz {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 20px 16px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.titulo {
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.subtitulo {
+  margin: -8px 0 0;
+  color: var(--cor-texto-2);
+  font-size: 0.95rem;
+}
+
+.acoes {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.recusa {
+  color: var(--cor-erro);
+  font-weight: 600;
+  margin: 0;
+}
+
+.acoes :global(button),
+.recusa + * :global(button) {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo-2);
+  color: var(--cor-texto);
+  cursor: pointer;
+}
+.acoes :global(button[disabled]) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.acoes :global([role='note']) {
+  color: var(--cor-texto-2);
+  font-size: 0.88rem;
+}
