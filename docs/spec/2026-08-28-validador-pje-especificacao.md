@@ -410,6 +410,21 @@ exigência de cabeçalho.
 Considerar aceitável entregar a Fase 2 sem correção de mídia, deixando apenas
 orientação textual para MP3/MP4.
 
+### MP4 em contêiner QuickTime (§16.6.1)
+
+Caso à parte de "MP3 e MP4 acima do limite": não é recodificação, é remux de
+contêiner — reescrever `ftyp` (brand QuickTime `qt` → `isom`/`iso2`/`avc1`/
+`mp41`, as mesmas do arquivo de referência que o usuário já converteu com
+sucesso) e somar o delta de tamanho aos offsets absolutos em `stco`/`co64`.
+Nenhum byte de vídeo/áudio (`mdat`) é tocado — sem perda de qualidade, sem
+`ffmpeg.wasm`, sem worker. Ver decisão P2-1 (`docs/decisoes/`), que trata só
+da recodificação por tamanho e não se aplica aqui.
+
+Só corrige quando o codec interno é avc1 (vídeo) + mp4a (áudio) — a única
+combinação que o remux sabe preservar com segurança. QuickTime com outro
+codec (HEVC/ProRes) permanece `FORMATO_NAO_SUPORTADO`, com orientação para
+reexportar em H.264/AAC.
+
 ## 8.3 Regras invioláveis da correção
 
 1. **Revalidação obrigatória.** O arquivo de saída passa pelos mesmos
@@ -675,10 +690,11 @@ Códigos de ocorrência: `ASSINATURA_PRESENTE`, `CAMPO_ASSINATURA_VAZIO`,
 `ARQUIVO_CRIPTOGRAFADO`, `ARQUIVO_CORROMPIDO`, `PDFA_NAO_DECLARADO`,
 `PDFA_DECLARACAO_INCONSISTENTE`, `PDFA_CRIPTOGRAFADO`, `PDFA_SEM_OUTPUTINTENT`,
 `PDFA_FONTE_NAO_EMBUTIDA`, `PDFA_JAVASCRIPT`, `PDFA_ARQUIVO_EMBUTIDO`,
-`PDFA_TRANSPARENCIA`, `PDFA_REFERENCIA_EXTERNA`.
+`PDFA_TRANSPARENCIA`, `PDFA_REFERENCIA_EXTERNA`, `MP4_CONTAINER_QUICKTIME`
+(§16.6.1).
 
 Estratégias de correção: `REMOVER_ASSINATURA`, `CONVERTER_PDFA`,
-`COMPRIMIR_PDF`, `RECODIFICAR_MIDIA`.
+`COMPRIMIR_PDF`, `RECODIFICAR_MIDIA`, `REMUXAR_MP4` (§8.2).
 
 # 13. Stack sugerida
 
@@ -856,6 +872,27 @@ O teste bloqueante de preservação de texto usa **`pdfjs-dist`** apenas como
 - **MP3:** `ID3` no offset 0 **ou** frame sync `0xFF` seguido de `0xE?/0xF?` com
   nibble de bitrate válido (≠ `1111`).
 - **PDF:** `%PDF-` nos primeiros 1024 bytes (alguns arquivos têm BOM/prefixo).
+
+### 16.6.1 Exceção: MP4 em contêiner QuickTime (§8.2)
+
+Vídeos de iPhone/WhatsApp têm extensão `.mp4` mas contêiner QuickTime
+(`ftyp` major brand `qt`) — exatamente o caso que a regra acima rejeita, e que
+o PJe também recusa. Antes de aplicar a regra de 16.6, `validarArquivo`
+verifica `ehContainerQuickTime()`:
+
+- Brand `qt` **e** codec em `stsd` é só `avc1`/`mp4a` (o único caso que o
+  remux de §8.2 sabe tratar sem recodificar) → `tipo = 'video/mp4'`,
+  ocorrência `MP4_CONTAINER_QUICKTIME` (erro, `correcaoDisponivel:
+  'REMUXAR_MP4'`), segue para os validadores normais de mp4 (tamanho etc.).
+- Brand `qt` com outro codec (HEVC/ProRes/...) → continua
+  `FORMATO_NAO_SUPORTADO`, mas com mensagem específica orientando a
+  reexportar em H.264/AAC.
+
+Esta checagem roda **antes** de `detectarTipo()`: nos arquivos reais que
+motivaram esta seção, a heurística de MP3 (16.6, frame sync 0xFF) dava falso
+positivo nos metadados binários do `moov`, fazendo o vídeo passar como
+`audio/mpeg` E `apto: true` — pior que `FORMATO_NAO_SUPORTADO`, porque
+aprovava silenciosamente um arquivo que o PJe recusa.
 
 ## 16.7 Teste de crescimento de memória (§14.4)
 

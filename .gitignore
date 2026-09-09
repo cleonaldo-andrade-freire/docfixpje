@@ -13,3 +13,7 @@ playwright-report
 # motor de correção (gerado de @jspawn/ghostscript-wasm por scripts/preparar-motor.ts)
 public/motores/
 src/config/motores.ts
+
+# vídeos reais usados manualmente para testar o remux QuickTime->MP4 (não são fixture,
+# não entram no repo — podem ser evidência de caso real)
+/videos/

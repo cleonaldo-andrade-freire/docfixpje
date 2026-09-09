@@ -38,4 +38,14 @@ correção de mídia, deixando apenas orientação textual para MP3/MP4").
 
 - `_headers` inalterado quanto a COEP.
 - `src/config/limites.ts` não ganha `MARGEM_BITRATE` nem tentativas de mídia.
-- `corrigirArquivo` roteia MP3/MP4 direto para `nao_corrigivel`.
+- `corrigirArquivo` roteia MP3/MP4 (`TAMANHO_EXCEDIDO`) direto para `nao_corrigivel`.
+
+## Adendo (2026-09-09) — remux de contêiner não é recodificação
+
+Esta decisão trata de **recodificar** mídia (mudar bitrate/pixels via
+`ffmpeg.wasm`) para caber no limite de tamanho. Não se aplica ao caso de MP4
+com contêiner QuickTime (`ftyp` brand `qt`, comum em vídeo de iPhone/WhatsApp,
+§16.6.1 da spec): ali só o `ftyp` e os offsets de `stco`/`co64` são
+reescritos, o `mdat` (vídeo/áudio) é copiado byte a byte. É JS puro, sem
+`ffmpeg.wasm`, sem `SharedArrayBuffer`, sem worker — implementado em
+`src/correcao/remuxMp4.ts`.

@@ -1,5 +1,6 @@
 import { gerarTodas } from './gerar-fixtures';
 import { detectarTipo } from '../src/deteccao/detectarTipo';
+import { ehContainerQuickTime, codecMp4Suportado } from '../src/deteccao/quicktimeMp4';
 import { varrerTrailerBruto } from '../src/pdf/estrutura';
 
 let fixtures: Record<string, Uint8Array>;
@@ -32,6 +33,8 @@ test('gera todas as fixtures esperadas', () => {
     'audio-grande.mp3',
     'video.mp4',
     'video-grande.mp4',
+    'video-quicktime.mp4',
+    'video-quicktime-codec-nao-suportado.mp4',
   ];
   expect(Object.keys(fixtures).sort()).toEqual([...esperadas].sort());
 });
@@ -46,6 +49,13 @@ test('cada fixture tem o magic number do seu tipo', () => {
   expect(detectarTipo(fixtures['video.mp4']!)).toBe('video/mp4');
   expect(detectarTipo(fixtures['video-grande.mp4']!)).toBe('video/mp4');
   expect(detectarTipo(fixtures['falso.pdf']!)).toBeNull();
+});
+
+test('fixtures QuickTime (§16.6.1) têm brand qt e o codec certo em cada uma', () => {
+  expect(ehContainerQuickTime(fixtures['video-quicktime.mp4']!)).toBe(true);
+  expect(codecMp4Suportado(fixtures['video-quicktime.mp4']!)).toBe(true);
+  expect(ehContainerQuickTime(fixtures['video-quicktime-codec-nao-suportado.mp4']!)).toBe(true);
+  expect(codecMp4Suportado(fixtures['video-quicktime-codec-nao-suportado.mp4']!)).toBe(false);
 });
 
 test('fixtures de fronteira têm o tamanho exato', () => {

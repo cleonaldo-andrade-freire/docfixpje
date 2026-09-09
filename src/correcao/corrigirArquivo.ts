@@ -5,6 +5,8 @@ import { LIMITES } from '../config/limites';
 import { executarComTimeout, TIMEOUT } from './executarComTimeout';
 import type { ParaCorrecao, DaCorrecao } from './protocoloCorrecao';
 import { modoE2E } from './ganchoE2E';
+import { remuxarQuickTimeParaIsom } from './remuxMp4';
+import { revalidar } from './revalidar';
 
 /**
  * Entrypoint de correção, desacoplado do motor e da UI (spec §15).
@@ -65,6 +67,46 @@ export async function corrigirArquivo(params: {
       bufferCorrigido: null,
       orientacao:
         'O arquivo está protegido por senha. Remova a proteção no aplicativo que o gerou e valide de novo. Esta ferramenta não pede senha nem quebra proteção.',
+    };
+  }
+
+  // Vídeo de iPhone/WhatsApp em contêiner QuickTime: remux leve (sem recodificar
+  // vídeo/áudio, sem worker/WASM) para o MP4 padrão que o PJe aceita (§16.6).
+  if (tipo === 'video/mp4' && cod.has('MP4_CONTAINER_QUICKTIME')) {
+    const inicio = Date.now();
+    const entrada = new Uint8Array(bytes);
+    const remux = remuxarQuickTimeParaIsom(entrada);
+    if (!remux.ok || !remux.bytes) {
+      return {
+        estadoDestino: 'correcao_falhou',
+        resultado: {
+          ...RESULTADO_VAZIO,
+          tentada: true,
+          estrategias: ['REMUXAR_MP4'],
+          avisos: [remux.motivo ?? 'Não foi possível reempacotar o vídeo.'],
+        },
+        bufferCorrigido: null,
+      };
+    }
+
+    cb.onEtapa('Reempacotando o vídeo para MP4 padrão…');
+    const revalidacao = await revalidar(nomeArquivo, remux.bytes, config);
+    const sucesso = revalidacao.apto;
+
+    return {
+      estadoDestino: sucesso ? 'corrigido' : 'correcao_falhou',
+      resultado: {
+        tentada: true,
+        estrategias: ['REMUXAR_MP4'],
+        sucesso,
+        tamanhoAntes: entrada.length,
+        tamanhoDepois: remux.bytes.length,
+        textoPreservado: true,
+        avisos: [],
+        duracaoMs: Date.now() - inicio,
+        revalidacao,
+      },
+      bufferCorrigido: sucesso ? (remux.bytes.buffer as ArrayBuffer) : null,
     };
   }
 

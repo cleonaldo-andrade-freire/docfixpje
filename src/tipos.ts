@@ -23,13 +23,15 @@ export type CodigoOcorrencia =
   | 'PDFA_JAVASCRIPT'
   | 'PDFA_ARQUIVO_EMBUTIDO'
   | 'PDFA_TRANSPARENCIA'
-  | 'PDFA_REFERENCIA_EXTERNA';
+  | 'PDFA_REFERENCIA_EXTERNA'
+  | 'MP4_CONTAINER_QUICKTIME';
 
 export type EstrategiaCorrecao =
   | 'REMOVER_ASSINATURA'
   | 'CONVERTER_PDFA'
   | 'COMPRIMIR_PDF'
-  | 'RECODIFICAR_MIDIA';
+  | 'RECODIFICAR_MIDIA'
+  | 'REMUXAR_MP4';
 
 export type ConformidadePdfa = 'A' | 'B' | 'U';
 
@@ -93,6 +95,7 @@ export const CODIGOS_OCORRENCIA = [
   'PDFA_ARQUIVO_EMBUTIDO',
   'PDFA_TRANSPARENCIA',
   'PDFA_REFERENCIA_EXTERNA',
+  'MP4_CONTAINER_QUICKTIME',
 ] as const satisfies readonly CodigoOcorrencia[];
 
 export const ESTRATEGIAS_CORRECAO = [
@@ -100,4 +103,5 @@ export const ESTRATEGIAS_CORRECAO = [
   'CONVERTER_PDFA',
   'COMPRIMIR_PDF',
   'RECODIFICAR_MIDIA',
+  'REMUXAR_MP4',
 ] as const satisfies readonly EstrategiaCorrecao[];

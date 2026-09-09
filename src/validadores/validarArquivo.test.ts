@@ -75,6 +75,20 @@ describe('spec §14.1', () => {
     }
   });
 
+  test('MP4 com contêiner QuickTime (avc1/mp4a) -> MP4_CONTAINER_QUICKTIME, inapto, corrigível', async () => {
+    const r = await val('video-quicktime.mp4');
+    expect(r.tipoDetectado).toBe('video/mp4');
+    expect(cod(r)).toEqual(['MP4_CONTAINER_QUICKTIME']);
+    expect(r.apto).toBe(false);
+    expect(r.corrigivel).toBe(true);
+  });
+
+  test('MP4 QuickTime com codec não suportado (ex.: HEVC) -> FORMATO_NAO_SUPORTADO, não corrigível', async () => {
+    const r = await val('video-quicktime-codec-nao-suportado.mp4');
+    expect(cod(r)).toEqual(['FORMATO_NAO_SUPORTADO']);
+    expect(r.corrigivel).toBe(false);
+  });
+
   test('MP4/MP3 de dezenas de MB -> apto (limite de mídia é 200 MB, não 10)', async () => {
     for (const nome of ['video-grande.mp4', 'audio-grande.mp3']) {
       const r = await val(nome);

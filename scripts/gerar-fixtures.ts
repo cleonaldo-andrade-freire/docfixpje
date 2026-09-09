@@ -289,6 +289,30 @@ function mp4(payloadMdat: Buffer): Uint8Array {
   return Buffer.concat([ftyp, moov, mdat]);
 }
 
+/** stsd com uma sample entry (só o cabeçalho tipo/tamanho) por codec. */
+function stsd(...codecs: string[]): Buffer {
+  const versionFlags = Buffer.alloc(4, 0x00);
+  const contagem = Buffer.alloc(4);
+  contagem.writeUInt32BE(codecs.length, 0);
+  const entradas = codecs.map((c) => caixaMp4(c, Buffer.alloc(0)));
+  return caixaMp4('stsd', Buffer.concat([versionFlags, contagem, ...entradas]));
+}
+
+/**
+ * MP4 com contêiner QuickTime (`ftyp` brand "qt") — o formato real de vídeos
+ * de iPhone/WhatsApp que o PJe recusa mesmo com extensão .mp4 (§16.6).
+ */
+function mp4QuickTime(payloadMdat: Buffer, codecs: string[]): Uint8Array {
+  const ftyp = caixaMp4('ftyp', Buffer.concat([Buffer.from('qt  ', 'latin1'), Buffer.alloc(4, 0x00)]));
+  const stbl = caixaMp4('stbl', stsd(...codecs));
+  const minf = caixaMp4('minf', stbl);
+  const mdia = caixaMp4('mdia', minf);
+  const trak = caixaMp4('trak', mdia);
+  const moov = caixaMp4('moov', trak);
+  const mdat = caixaMp4('mdat', payloadMdat);
+  return Buffer.concat([ftyp, moov, mdat]);
+}
+
 // ─────────────────────────────────────────────────────────────── orquestração
 
 async function assertCarregaNoPdfLib(nome: string, bytes: Uint8Array): Promise<void> {
@@ -331,6 +355,8 @@ export async function gerarTodas(): Promise<Record<string, Uint8Array>> {
     'audio-grande.mp3': mp3(Math.ceil((TAMANHO_MAX_BYTES + 1) / 417)),
     'video.mp4': mp4(Buffer.alloc(2048, 0x00)),
     'video-grande.mp4': mp4(Buffer.alloc(TAMANHO_MAX_BYTES + 1, 0x00)),
+    'video-quicktime.mp4': mp4QuickTime(Buffer.alloc(2048, 0x00), ['avc1', 'mp4a']),
+    'video-quicktime-codec-nao-suportado.mp4': mp4QuickTime(Buffer.alloc(2048, 0x00), ['hvc1', 'mp4a']),
   };
 
   // Normaliza para Uint8Array puro do realm atual: sob vitest, Buffer do Node
