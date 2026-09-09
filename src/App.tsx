@@ -83,7 +83,11 @@ function AppInterno({ fabricaWorker, fabricaWorkerCorrecao }: PropsApp) {
     async (id: string) => {
       const item = estado.itens.find((i) => i.id === id);
       if (!item || !item.resultado) return;
-      if (!avisoLegalMostrado) setAvisoLegalMostrado(true);
+      // O aviso fala de assinatura digital/QR code — texto de PDF (§8.3.5).
+      // Remux de vídeo (MP4 QuickTime) não remove assinatura nenhuma.
+      if (!avisoLegalMostrado && item.resultado.tipoDetectado === 'application/pdf') {
+        setAvisoLegalMostrado(true);
+      }
       setCorrigindoId(id);
       cutucar();
       dispatch({ t: 'estado', id, estado: 'corrigindo' });

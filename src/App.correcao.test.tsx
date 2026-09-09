@@ -110,6 +110,23 @@ test('aviso legal aparece na 1ª correção e não some depois', async () => {
   expect(await screen.findByText(/documento novo/i)).toBeInTheDocument();
 });
 
+test('correção de MP4 QuickTime (remux) não mostra o aviso legal de assinatura/PDF', async () => {
+  // O aviso (spec §8.3.5) fala de "assinatura digital" e "QR code impresso na
+  // página" — texto de PDF. Remux de vídeo não remove assinatura nenhuma
+  // (vídeo não tem), então não faz sentido mostrá-lo aqui.
+  const user = userEvent.setup();
+  render(<App fabricaWorker={fabricaValidacao} fabricaWorkerCorrecao={fabricaCorrecao([])} />);
+  await user.upload(screen.getByLabelText(/selecionar arquivos/i), [
+    fixtureFile('video-quicktime.mp4'),
+  ]);
+  await user.click(screen.getByRole('button', { name: /^validar$/i }));
+  await user.click(await screen.findByRole('button', { name: /tentar corrigir/i }));
+
+  const linha = await screen.findByRole('listitem', { name: 'video-quicktime.mp4' });
+  expect(await within(linha).findByText('Corrigido — revalidado com sucesso')).toBeInTheDocument();
+  expect(screen.queryByText(/documento novo/i)).not.toBeInTheDocument();
+});
+
 test('correção falha → correcao_falhou vermelho + orientação manual', async () => {
   const user = userEvent.setup();
   render(

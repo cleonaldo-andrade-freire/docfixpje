@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import { LIMITES } from '../config/limites';
 import { detectarTipo } from '../deteccao/detectarTipo';
+import { ehContainerQuickTime } from '../deteccao/quicktimeMp4';
 import { formatarTamanho } from '../infra/formato';
 import type { ItemArquivo } from '../estado/store';
 import css from './AreaUpload.module.css';
@@ -55,10 +56,16 @@ async function montarItem(file: File): Promise<ItemArquivo> {
     return itemReprovadoPorTamanho(file);
   }
   const cabecalho = new Uint8Array(await file.slice(0, 1024).arrayBuffer());
+  // Só olha a brand do ftyp aqui, nunca o codec: o moov de um vídeo real
+  // passa fácil dessa janela de preview, e exigir o moov inteiro (só pra
+  // decidir o selo) faria o preview deixar de ser rápido. Se o codec não for
+  // avc1/mp4a, isso aparece corretamente na validação completa, com o
+  // arquivo inteiro.
+  const tipoRapido = ehContainerQuickTime(cabecalho) ? 'video/mp4' : detectarTipo(cabecalho);
   return {
     id: novoId(),
     file,
-    tipoRapido: detectarTipo(cabecalho),
+    tipoRapido,
     estado: 'aguardando',
     etapa: null,
     resultado: null,
