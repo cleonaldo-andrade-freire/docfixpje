@@ -289,12 +289,16 @@ function mp4(payloadMdat: Buffer): Uint8Array {
   return Buffer.concat([ftyp, moov, mdat]);
 }
 
-/** stsd com uma sample entry (só o cabeçalho tipo/tamanho) por codec. */
+/**
+ * stsd com uma sample entry por codec. `avc1` ganha os 78 bytes fixos do
+ * VisualSampleEntry (ISO 14496-12 §12.1.3) porque o remux (remuxMp4.ts) lê
+ * essa estrutura de verdade; os demais formatos são só o cabeçalho tipo/tamanho.
+ */
 function stsd(...codecs: string[]): Buffer {
   const versionFlags = Buffer.alloc(4, 0x00);
   const contagem = Buffer.alloc(4);
   contagem.writeUInt32BE(codecs.length, 0);
-  const entradas = codecs.map((c) => caixaMp4(c, Buffer.alloc(0)));
+  const entradas = codecs.map((c) => caixaMp4(c, c === 'avc1' ? Buffer.alloc(78, 0x00) : Buffer.alloc(0)));
   return caixaMp4('stsd', Buffer.concat([versionFlags, contagem, ...entradas]));
 }
 

@@ -83,3 +83,62 @@ test('falha de forma controlada quando não encontra moov', () => {
   expect(r.ok).toBe(false);
   expect(r.motivo).toMatch(/moov/i);
 });
+
+// Achado real (2026-09-09): o PJe recusa o vídeo mesmo já em contêiner isom com
+// stco corrigido — só um remux que também descarta essas caixas específicas do
+// QuickTime (comprovado com `ffmpeg -c copy`, testado de verdade no PJe) funciona.
+
+test('remove a caixa tapt de dentro de trak', () => {
+  const stbl = caixa('stbl', caixa('stco', b(0, 0, 0, 0), u32(0)));
+  const trak = caixa('trak', caixa('tapt', b(1, 2, 3)), caixa('mdia', caixa('minf', stbl)));
+  const original = concat(ftypQt(), caixa('moov', trak), caixa('mdat', b(9)));
+
+  const r = remuxarQuickTimeParaIsom(original);
+
+  expect(r.ok).toBe(true);
+  const textoSaida = Buffer.from(r.bytes!).toString('latin1');
+  expect(textoSaida).not.toContain('tapt');
+});
+
+test('remove fiel e chrm da sample entry de vídeo (avc1), mantém avcC e colr', () => {
+  const amostraAvc1 = concat(
+    u32(8 + 78 + 16 + 18), // size da entrada: header(8) + fixo(78) + avcC(16) + colr(18)
+    ascii('avc1'),
+    new Uint8Array(78), // campos fixos do VisualSampleEntry
+    caixa('avcC', b(1, 0x42, 0, 0x1f)),
+    caixa('colr', new Uint8Array(10)),
+    caixa('fiel', new Uint8Array(2)),
+    caixa('chrm', new Uint8Array(2)),
+  );
+  const stsd = caixa('stsd', b(0, 0, 0, 0), u32(1), amostraAvc1);
+  const stbl = caixa('stbl', stsd, caixa('stco', b(0, 0, 0, 0), u32(0)));
+  const trak = caixa('trak', caixa('mdia', caixa('minf', stbl)));
+  const original = concat(ftypQt(), caixa('moov', trak), caixa('mdat', b(9)));
+
+  const r = remuxarQuickTimeParaIsom(original);
+
+  expect(r.ok).toBe(true);
+  const textoSaida = Buffer.from(r.bytes!).toString('latin1');
+  expect(textoSaida).not.toContain('fiel');
+  expect(textoSaida).not.toContain('chrm');
+  expect(textoSaida).toContain('avcC');
+  expect(textoSaida).toContain('colr');
+});
+
+test('descarta a caixa meta de dentro de moov (estilo QuickTime, sem version/flags)', () => {
+  // No arquivo real, `meta` é filho direto de `moov`, irmão dos `trak` — não é
+  // uma caixa de nível superior. O `hdlr`/`keys`/`ilst` vão junto, descartados.
+  const stbl = caixa('stbl', caixa('stco', b(0, 0, 0, 0), u32(0)));
+  const trak = caixa('trak', caixa('mdia', caixa('minf', stbl)));
+  const metaQuickTime = caixa('meta', caixa('hdlr', new Uint8Array(20)), caixa('keys', new Uint8Array(8)));
+  const original = concat(ftypQt(), caixa('moov', trak, metaQuickTime), caixa('mdat', b(9)));
+
+  const r = remuxarQuickTimeParaIsom(original);
+
+  expect(r.ok).toBe(true);
+  const textoSaida = Buffer.from(r.bytes!).toString('latin1');
+  expect(textoSaida).not.toContain('meta');
+  expect(textoSaida).not.toContain('keys');
+  // mdat continua presente e intacto.
+  expect(r.bytes!.subarray(r.bytes!.length - 1)).toEqual(b(9));
+});

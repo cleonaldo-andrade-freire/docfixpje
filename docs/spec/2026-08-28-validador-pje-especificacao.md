@@ -413,12 +413,32 @@ orientação textual para MP3/MP4.
 ### MP4 em contêiner QuickTime (§16.6.1)
 
 Caso à parte de "MP3 e MP4 acima do limite": não é recodificação, é remux de
-contêiner — reescrever `ftyp` (brand QuickTime `qt` → `isom`/`iso2`/`avc1`/
-`mp41`, as mesmas do arquivo de referência que o usuário já converteu com
-sucesso) e somar o delta de tamanho aos offsets absolutos em `stco`/`co64`.
-Nenhum byte de vídeo/áudio (`mdat`) é tocado — sem perda de qualidade, sem
-`ffmpeg.wasm`, sem worker. Ver decisão P2-1 (`docs/decisoes/`), que trata só
-da recodificação por tamanho e não se aplica aqui.
+contêiner. Nenhum byte de vídeo/áudio (`mdat`) é tocado — sem perda de
+qualidade, sem `ffmpeg.wasm`, sem worker. Ver decisão P2-1 (`docs/decisoes/`),
+que trata só da recodificação por tamanho e não se aplica aqui.
+
+**Investigado com o PJe de verdade (2026-09-09):** a hipótese inicial — só
+trocar `ftyp` (`qt` → `isom`/`iso2`/`avc1`/`mp41`) e corrigir os offsets de
+`stco`/`co64` — **não bastou**; o PJe recusou o arquivo assim corrigido com o
+mesmo erro do original. Comparação byte a byte contra um vídeo convertido
+manualmente (FormatFactory, GPU Intel) mostrou profile H.264 diferente
+(Baseline→High) e tamanho bem menor, o que sugeria recodificação — mas dois
+arquivos de teste isolando cada variável (mesmo profile Baseline num arquivo
+menor; profile High num arquivo do mesmo tamanho do original) **funcionaram
+os dois** no PJe, descartando tamanho e profile como causa. O que resolveu de
+fato: `ffmpeg -c copy` (sem recodificar) também funcionou, provando que o
+problema é a presença de caixas específicas do QuickTime que a hipótese
+inicial preservava sem tocar:
+
+- `tapt` (track aperture mode dimensions), filho direto de `trak`.
+- `fiel` e `chrm`, dentro da sample entry de vídeo (`avc1`) em `stsd`.
+- `meta` (com `hdlr`/`keys`/`ilst` no formato antigo da Apple, sem
+  version/flags como o `meta` do ISO), filho direto de `moov`.
+
+O remux reconstrói `moov` do zero (não só copia e ajusta offsets),
+descartando essas três caixas em qualquer profundidade onde apareçam,
+recalculando o tamanho de cada caixa ancestral e o delta final aplicado a
+`stco`/`co64`. Implementado em `src/correcao/remuxMp4.ts`.
 
 Só corrige quando o codec interno é avc1 (vídeo) + mp4a (áudio) — a única
 combinação que o remux sabe preservar com segurança. QuickTime com outro
