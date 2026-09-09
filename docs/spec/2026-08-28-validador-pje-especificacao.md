@@ -435,10 +435,21 @@ inicial preservava sem tocar:
 - `meta` (com `hdlr`/`keys`/`ilst` no formato antigo da Apple, sem
   version/flags como o `meta` do ISO), filho direto de `moov`.
 
+**2ª rodada (mesmo dia):** só descartar essas três ainda não bastou — o PJe
+recusou de novo o arquivo assim corrigido. Comparação renovada contra
+`ffmpeg -c copy` achou mais duas diferenças:
+
+- um `hdlr` duplicado, filho direto de `minf` (só o `hdlr` de `mdia` existe
+  no ISO — o de `minf` é resquício do "component handler" do QuickTime);
+- a sample entry de áudio (`mp4a`) em **version 1** do QuickTime, com um
+  `wave` embrulhando `frma`+`mp4a` aninhado+`esds`+terminador — normalizada
+  para **version 0** com `esds` direto, como o ISO espera.
+
 O remux reconstrói `moov` do zero (não só copia e ajusta offsets),
-descartando essas três caixas em qualquer profundidade onde apareçam,
-recalculando o tamanho de cada caixa ancestral e o delta final aplicado a
-`stco`/`co64`. Implementado em `src/correcao/remuxMp4.ts`.
+descartando as caixas acima em qualquer profundidade onde apareçam e
+normalizando a sample entry de áudio, recalculando o tamanho de cada caixa
+ancestral e o delta final aplicado a `stco`/`co64`. Implementado em
+`src/correcao/remuxMp4.ts`.
 
 Só corrige quando o codec interno é avc1 (vídeo) + mp4a (áudio) — a única
 combinação que o remux sabe preservar com segurança. QuickTime com outro

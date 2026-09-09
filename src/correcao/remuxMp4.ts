@@ -5,12 +5,17 @@ import { listarCaixas, encontrarCaixasPorTipo, type CaixaMp4 } from '../deteccao
  * recodificar vídeo/áudio (§16.6). O PJe recusa vídeos de iPhone/WhatsApp
  * cuja extensão é .mp4 mas o contêiner interno é QuickTime — mesmo depois de
  * só trocar o `ftyp` e ajustar `stco`/`co64` (comprovado testando no PJe de
- * verdade). O que resolve é reconstruir o `moov` do zero descartando as
- * extensões específicas do QuickTime que um mp4 "puro" nunca tem: `tapt`
- * (dentro de `trak`), `fiel`/`chrm` (dentro da sample entry de vídeo em
- * `stsd`) e `meta` (filho direto de `moov`, com `hdlr`/`keys`/`ilst`, no
- * formato antigo da Apple, sem version/flags como o `meta` do ISO). `mdat`
- * (as amostras de vídeo/áudio) nunca é tocado — mesmos bytes, sem
+ * verdade) — nem só remover `tapt`/`fiel`/`chrm`/`meta` (2ª rodada, também
+ * testada e também recusada). O que resolve é reconstruir o `moov` do zero
+ * descartando TUDO que é extensão específica do QuickTime:
+ * - `tapt`, filho de `trak`;
+ * - `fiel`/`chrm`, dentro da sample entry de vídeo (`avc1`) em `stsd`;
+ * - `meta` (com `hdlr`/`keys`/`ilst`, formato antigo da Apple sem
+ *   version/flags), filho direto de `moov`;
+ * - um `hdlr` duplicado, filho de `minf` (só o `hdlr` de `mdia` é do ISO);
+ * - a sample entry de áudio (`mp4a`) versão 1 do QuickTime, com um `wave`
+ *   embrulhando o `esds` — normalizada para versão 0 com `esds` direto.
+ * `mdat` (as amostras de vídeo/áudio) nunca é tocado — mesmos bytes, sem
  * recodificar, sem `ffmpeg.wasm`, sem worker.
  */
 
@@ -41,6 +46,19 @@ const CONFIG_AMOSTRA_VIDEO_DESCARTAR = new Set(['fiel', 'chrm']);
 
 /** Tamanho fixo do VisualSampleEntry (ISO 14496-12 §12.1.3), após o cabeçalho size+type da entrada. */
 const TAMANHO_FIXO_VISUAL_SAMPLE_ENTRY = 78;
+
+/** Tamanho fixo (versão 0) do AudioSampleEntry (ISO 14496-12 §12.2.3), após o cabeçalho size+type da entrada. */
+const TAMANHO_FIXO_AUDIO_SAMPLE_ENTRY_V0 = 28;
+
+/** Bytes extras que a versão 1 (QuickTime) do AudioSampleEntry acrescenta antes das caixas de configuração. */
+const TAMANHO_EXTRA_AUDIO_SAMPLE_ENTRY_V1 = 16;
+
+/** `hdlr` só é legítimo como filho direto de `mdia`; um `hdlr` extra em `minf` é resquício do QuickTime. */
+function deveDescartarFilho(tipoPai: string, tipoFilho: string): boolean {
+  if (CAIXAS_QUICKTIME_DESCARTAR.has(tipoFilho)) return true;
+  if (tipoPai === 'minf' && tipoFilho === 'hdlr') return true;
+  return false;
+}
 
 function paraAscii(s: string): Uint8Array {
   return new Uint8Array([...s].map((c) => c.charCodeAt(0)));
@@ -97,11 +115,11 @@ function reconstruirStsd(bytes: Uint8Array, caixa: CaixaMp4): Uint8Array {
     const tamanhoEntrada = dv.getUint32(p);
     if (tamanhoEntrada < 8) throw new Error('sample entry malformada em stsd');
     const formato = textoAscii(bytes, p + 4, 4);
-    entradas.push(
-      formato === 'avc1'
-        ? reconstruirAmostraVideo(bytes, p, tamanhoEntrada, formato)
-        : bytes.slice(p, p + tamanhoEntrada),
-    );
+    let entrada: Uint8Array;
+    if (formato === 'avc1') entrada = reconstruirAmostraVideo(bytes, p, tamanhoEntrada, formato);
+    else if (formato === 'mp4a') entrada = reconstruirAmostraAudio(bytes, p, tamanhoEntrada, formato);
+    else entrada = bytes.slice(p, p + tamanhoEntrada);
+    entradas.push(entrada);
     p += tamanhoEntrada;
   }
   return construirCaixa('stsd', [cabecalhoFixo, ...entradas]);
@@ -126,10 +144,47 @@ function reconstruirAmostraVideo(
   return construirCaixa(formato, [camposFixos, ...configs]);
 }
 
+/** Sample entry de áudio (mp4a): normaliza para version 0 e desembrulha `wave` → `esds` direto (§12.2.3). */
+function reconstruirAmostraAudio(
+  bytes: Uint8Array,
+  offsetEntrada: number,
+  tamanhoEntrada: number,
+  formato: string,
+): Uint8Array {
+  const inicioFixo = offsetEntrada + 8;
+  const fimFixo = inicioFixo + TAMANHO_FIXO_AUDIO_SAMPLE_ENTRY_V0;
+  if (fimFixo > offsetEntrada + tamanhoEntrada) {
+    throw new Error('sample entry de áudio menor que o esperado');
+  }
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const version = dv.getUint16(inicioFixo + 8);
+
+  const camposFixos = bytes.slice(inicioFixo, fimFixo);
+  if (version !== 0) {
+    camposFixos[8] = 0;
+    camposFixos[9] = 0; // normaliza o campo version para 0
+  }
+
+  const inicioConfigs = fimFixo + (version >= 1 ? TAMANHO_EXTRA_AUDIO_SAMPLE_ENTRY_V1 : 0);
+  const configsBrutos = listarCaixas(bytes, inicioConfigs, offsetEntrada + tamanhoEntrada);
+  const configs: Uint8Array[] = [];
+  for (const c of configsBrutos) {
+    if (c.tipo === 'wave') {
+      const esds = listarCaixas(bytes, c.offset + c.tamanhoCabecalho, c.offset + c.tamanho).find(
+        (f) => f.tipo === 'esds',
+      );
+      if (esds) configs.push(bytes.slice(esds.offset, esds.offset + esds.tamanho));
+    } else {
+      configs.push(bytes.slice(c.offset, c.offset + c.tamanho));
+    }
+  }
+  return construirCaixa(formato, [camposFixos, ...configs]);
+}
+
 /** Reconstrói um container conhecido (moov/trak/mdia/minf/stbl/edts), descartando filhos indesejados. */
 function reconstruirContainer(bytes: Uint8Array, caixa: CaixaMp4): Uint8Array {
   const filhos = listarCaixas(bytes, caixa.offset + caixa.tamanhoCabecalho, caixa.offset + caixa.tamanho).filter(
-    (f) => !CAIXAS_QUICKTIME_DESCARTAR.has(f.tipo),
+    (f) => !deveDescartarFilho(caixa.tipo, f.tipo),
   );
   const partes = filhos.map((f) => reconstruirCaixa(bytes, f));
   return construirCaixa(caixa.tipo, partes);

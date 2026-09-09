@@ -291,14 +291,16 @@ function mp4(payloadMdat: Buffer): Uint8Array {
 
 /**
  * stsd com uma sample entry por codec. `avc1` ganha os 78 bytes fixos do
- * VisualSampleEntry (ISO 14496-12 §12.1.3) porque o remux (remuxMp4.ts) lê
- * essa estrutura de verdade; os demais formatos são só o cabeçalho tipo/tamanho.
+ * VisualSampleEntry (ISO 14496-12 §12.1.3) e `mp4a` os 28 bytes fixos do
+ * AudioSampleEntry versão 0 (§12.2.3), porque o remux (remuxMp4.ts) lê essas
+ * estruturas de verdade; os demais formatos são só o cabeçalho tipo/tamanho.
  */
 function stsd(...codecs: string[]): Buffer {
   const versionFlags = Buffer.alloc(4, 0x00);
   const contagem = Buffer.alloc(4);
   contagem.writeUInt32BE(codecs.length, 0);
-  const entradas = codecs.map((c) => caixaMp4(c, c === 'avc1' ? Buffer.alloc(78, 0x00) : Buffer.alloc(0)));
+  const corpoPorCodec: Record<string, number> = { avc1: 78, mp4a: 28 };
+  const entradas = codecs.map((c) => caixaMp4(c, Buffer.alloc(corpoPorCodec[c] ?? 0, 0x00)));
   return caixaMp4('stsd', Buffer.concat([versionFlags, contagem, ...entradas]));
 }
 
