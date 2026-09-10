@@ -38,6 +38,22 @@ import {
  *   - `stco`/`co64`                → recalculados para o novo lugar do `mdat`
  */
 
+/**
+ * Codecs que o PJe aceita de fato.
+ *
+ * O remux monta um MP4 ISO válido para qualquer codec que o container comporte,
+ * mas converter um HEVC não ajudaria: o PJe recusa do mesmo jeito, e o usuário
+ * voltaria com um arquivo que esta ferramenta declarou pronto — que é
+ * exatamente a falha que a Regra 4 existe para evitar. Vídeos de iPhone
+ * recentes gravam em HEVC (`hvc1`), então este caso é comum, e a saída honesta
+ * é recusar com orientação em vez de "corrigir" para nada.
+ *
+ * Restrição herdada dos testes no PJe real registrados em `remuxMp4.ts` da
+ * branch `main`, consolidada aqui.
+ */
+const CODECS_VIDEO_ACEITOS = new Set(['avc1', 'avc3']);
+const CODECS_AUDIO_ACEITOS = new Set(['mp4a']);
+
 /** Sub-boxes de sample entry que o MP4 ISO conhece. O resto é lixo do QuickTime. */
 const SUBBOX_SAMPLE_ENTRY = new Set([
   'avcC',
@@ -197,6 +213,14 @@ export function analisarMidia(bytes: Uint8Array): AnaliseMidia {
     if (!CODECS_VIDEO.has(codec) && !CODECS_AUDIO.has(codec)) {
       return naoRemuxavel(
         `a trilha ${midia} usa o codec "${codec}", que não existe em MP4. É preciso recodificar o arquivo — o remux não resolve.`,
+      );
+    }
+    const aceitos = midia === 'vide' ? CODECS_VIDEO_ACEITOS : CODECS_AUDIO_ACEITOS;
+    if (!aceitos.has(codec)) {
+      return naoRemuxavel(
+        `a trilha ${midia} usa o codec "${codec}". Ele cabe num MP4, mas o PJe não aceita: ` +
+          `remuxar produziria um arquivo conforme que ainda assim seria recusado. ` +
+          `É preciso recodificar em ${midia === 'vide' ? 'H.264 (avc1)' : 'AAC (mp4a)'}.`,
       );
     }
     temMidia = true;

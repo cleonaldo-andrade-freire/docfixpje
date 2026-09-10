@@ -17,6 +17,8 @@ export interface OpcoesMp4 {
   recheioMdat?: number;
   /** `moov` antes do `mdat` (o layout que obriga o remux a relocar os chunks). */
   moovPrimeiro?: boolean;
+  /** `hvc1` (HEVC) simula o vídeo de iPhone recente, que o PJe não aceita. */
+  codecVideo?: 'avc1' | 'hvc1';
 }
 
 const TIMESCALE = 600;
@@ -116,7 +118,7 @@ function avcC(): Buffer {
   );
 }
 
-function avc1(quicktime: boolean): Buffer {
+function avc1(quicktime: boolean, codec: 'avc1' | 'hvc1' = 'avc1'): Buffer {
   // `colr` do QuickTime é `nclc`; o do MP4 é `nclx` (+ full_range_flag).
   const colr = quicktime
     ? caixa('colr', Buffer.from('nclc', 'latin1'), u16(1, 1, 1))
@@ -131,7 +133,7 @@ function avc1(quicktime: boolean): Buffer {
   compressorname.write('H.264', 1, 'latin1');
 
   return caixa(
-    'avc1',
+    codec,
     zeros(6),
     u16(1), // data_reference_index
     u16(0, 0), // pre_defined, reserved
@@ -143,7 +145,9 @@ function avc1(quicktime: boolean): Buffer {
     compressorname,
     u16(0x0018), // depth
     Buffer.from([0xff, 0xff]), // pre_defined = -1
-    avcC(),
+    // `hvcC` de preenchimento: a fixture existe para o remux RECUSAR o HEVC,
+    // então basta o 4CC do codec estar certo.
+    codec === 'hvc1' ? caixa('hvcC', Buffer.from([0x01, 0x01, 0x60, 0x00])) : avcC(),
     colr,
     ...soQt,
   );
@@ -211,6 +215,7 @@ interface Trilha {
   amostras: number;
   tamAmostra: number;
   timescale: number;
+  codec?: 'avc1' | 'hvc1';
 }
 
 /** stbl com uma amostra por chunk — assim `stco` tem um offset por amostra. */
@@ -221,7 +226,7 @@ function stbl(t: Trilha, quicktime: boolean, offsets: number[]): Buffer {
   const stco = caixa('stco', u32(0), u32(offsets.length), u32(...offsets));
   return caixa(
     'stbl',
-    caixa('stsd', u32(0), u32(1), t.video ? avc1(quicktime) : mp4a(quicktime)),
+    caixa('stsd', u32(0), u32(1), t.video ? avc1(quicktime, t.codec ?? 'avc1') : mp4a(quicktime)),
     stts,
     stsc,
     stsz,
@@ -256,10 +261,16 @@ function trak(t: Trilha, id: number, quicktime: boolean, offsets: number[]): Buf
  * seu tamanho, já que os offsets do `stco` dependem de onde o `mdat` vai cair.
  */
 export function montarMp4(opcoes: OpcoesMp4 = {}): Uint8Array {
-  const { quicktime = false, comAudio = true, recheioMdat = 0, moovPrimeiro = false } = opcoes;
+  const {
+    quicktime = false,
+    comAudio = true,
+    recheioMdat = 0,
+    moovPrimeiro = false,
+    codecVideo = 'avc1',
+  } = opcoes;
 
   const trilhas: Trilha[] = [
-    { video: true, amostras: AMOSTRAS_VIDEO, tamAmostra: TAM_AMOSTRA_VIDEO, timescale: TIMESCALE },
+    { video: true, amostras: AMOSTRAS_VIDEO, tamAmostra: TAM_AMOSTRA_VIDEO, timescale: TIMESCALE, codec: codecVideo },
     ...(comAudio
       ? [{ video: false, amostras: AMOSTRAS_AUDIO, tamAmostra: TAM_AMOSTRA_AUDIO, timescale: 44100 }]
       : []),

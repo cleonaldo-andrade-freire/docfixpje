@@ -316,6 +316,9 @@ export async function gerarTodas(): Promise<Record<string, Uint8Array>> {
     // `moov` antes do `mdat` (o remux precisa relocar os chunks).
     'video-quicktime.mp4': montarMp4({ quicktime: true, moovPrimeiro: true }),
     'video-quicktime-so-video.mp4': montarMp4({ quicktime: true, comAudio: false }),
+    // iPhone recente grava HEVC: o remux produziria um MP4 conforme que o PJe
+    // recusaria do mesmo jeito, então tem de ser recusado antes.
+    'video-quicktime-hevc.mp4': montarMp4({ quicktime: true, codecVideo: 'hvc1' }),
     'video-sem-trilha.mp4': montarMp4SemTrilha(),
   };
 

@@ -99,6 +99,14 @@ describe('spec §14.1', () => {
     expect(cod(r)).toContain('CONTAINER_QUICKTIME');
   });
 
+  test('QuickTime em HEVC -> MIDIA_NAO_REMUXAVEL: convertê-lo não faria o PJe aceitar', async () => {
+    const r = await val('video-quicktime-hevc.mp4');
+    expect(cod(r)).toContain('MIDIA_NAO_REMUXAVEL');
+    expect(r.apto).toBe(false);
+    expect(r.corrigivel).toBe(false);
+    expect(r.ocorrencias[0]!.orientacao).toMatch(/H\.264/);
+  });
+
   test('MP4 sem nenhuma trilha -> MIDIA_NAO_REMUXAVEL, inapto e NÃO corrigível', async () => {
     const r = await val('video-sem-trilha.mp4');
     expect(cod(r)).toContain('MIDIA_NAO_REMUXAVEL');

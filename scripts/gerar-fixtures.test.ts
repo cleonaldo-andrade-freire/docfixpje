@@ -34,6 +34,7 @@ test('gera todas as fixtures esperadas', () => {
     'video-grande.mp4',
     'video-quicktime.mp4',
     'video-quicktime-so-video.mp4',
+    'video-quicktime-hevc.mp4',
     'video-sem-trilha.mp4',
   ];
   expect(Object.keys(fixtures).sort()).toEqual([...esperadas].sort());

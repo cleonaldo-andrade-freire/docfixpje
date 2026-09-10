@@ -90,6 +90,16 @@ describe('análise de container', () => {
     expect(a.remuxavel).toBe(false);
     expect(a.motivo).toMatch(/trilha/);
   });
+
+  // O remux montaria um MP4 ISO perfeito com a trilha HEVC dentro — e o PJe
+  // recusaria assim mesmo. Dizer "corrigido" aqui seria mentir para o usuário.
+  test('HEVC é recusado, mesmo sendo remuxável do ponto de vista do container', () => {
+    const a = analisarMidia(fx('video-quicktime-hevc.mp4'));
+    expect(a.remuxavel).toBe(false);
+    expect(a.motivo).toMatch(/hvc1/);
+    expect(a.motivo).toMatch(/H\.264/);
+    expect(a.trilhas.some((t) => t.codec === 'hvc1')).toBe(true);
+  });
 });
 
 describe('remux QuickTime -> MP4', () => {
