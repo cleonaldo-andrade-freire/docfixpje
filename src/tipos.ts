@@ -3,7 +3,7 @@
  * Os validadores produzem `Ocorrencia[]`; o orquestrador monta `ResultadoValidacao`.
  */
 
-export type TipoDetectado = 'application/pdf' | 'audio/mpeg' | 'video/mp4';
+export type TipoDetectado = 'application/pdf' | 'audio/mpeg' | 'video/mp4' | 'video/quicktime';
 
 export type Gravidade = 'erro' | 'aviso';
 
@@ -13,6 +13,8 @@ export type CodigoOcorrencia =
   | 'RESTRICAO_DOCMDP'
   | 'TAMANHO_EXCEDIDO'
   | 'FORMATO_NAO_SUPORTADO'
+  | 'CONTAINER_QUICKTIME'
+  | 'MIDIA_NAO_REMUXAVEL'
   | 'ARQUIVO_CRIPTOGRAFADO'
   | 'ARQUIVO_CORROMPIDO'
   | 'PDFA_NAO_DECLARADO'
@@ -23,8 +25,7 @@ export type CodigoOcorrencia =
   | 'PDFA_JAVASCRIPT'
   | 'PDFA_ARQUIVO_EMBUTIDO'
   | 'PDFA_TRANSPARENCIA'
-  | 'PDFA_REFERENCIA_EXTERNA'
-  | 'MP4_CONTAINER_QUICKTIME';
+  | 'PDFA_REFERENCIA_EXTERNA';
 
 export type EstrategiaCorrecao =
   | 'REMOVER_ASSINATURA'
@@ -84,6 +85,8 @@ export const CODIGOS_OCORRENCIA = [
   'RESTRICAO_DOCMDP',
   'TAMANHO_EXCEDIDO',
   'FORMATO_NAO_SUPORTADO',
+  'CONTAINER_QUICKTIME',
+  'MIDIA_NAO_REMUXAVEL',
   'ARQUIVO_CRIPTOGRAFADO',
   'ARQUIVO_CORROMPIDO',
   'PDFA_NAO_DECLARADO',
@@ -95,7 +98,6 @@ export const CODIGOS_OCORRENCIA = [
   'PDFA_ARQUIVO_EMBUTIDO',
   'PDFA_TRANSPARENCIA',
   'PDFA_REFERENCIA_EXTERNA',
-  'MP4_CONTAINER_QUICKTIME',
 ] as const satisfies readonly CodigoOcorrencia[];
 
 export const ESTRATEGIAS_CORRECAO = [

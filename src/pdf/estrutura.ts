@@ -1,4 +1,4 @@
-import { PDFDocument, EncryptedPDFError } from 'pdf-lib';
+import type { PDFDocument } from 'pdf-lib';
 
 /**
  * Carga e varredura de baixo nível de PDFs.
@@ -7,6 +7,11 @@ import { PDFDocument, EncryptedPDFError } from 'pdf-lib';
  * o pdf-lib nem sempre expõe /SigFlags e não enxerga assinaturas adicionadas
  * por incremental update. O pdf-lib entra só para detectar criptografia
  * (EncryptedPDFError) e, mais adiante, nomear campos quando conseguir carregar.
+ *
+ * O import do pdf-lib é DINÂMICO de propósito: `validarArquivo` roda também no
+ * worker de mídia (a revalidação obrigatória do vídeo remuxado), e um import
+ * estático arrastaria os ~270 KB da biblioteca para um worker que nunca abre um
+ * PDF. Assim o chunk só é baixado quando um PDF é de fato carregado.
  */
 
 export type CargaPdf =
@@ -14,6 +19,7 @@ export type CargaPdf =
   | { ok: false; motivo: 'ARQUIVO_CRIPTOGRAFADO' | 'ARQUIVO_CORROMPIDO' };
 
 export async function carregarPdf(bytes: Uint8Array): Promise<CargaPdf> {
+  const { PDFDocument, EncryptedPDFError } = await import('pdf-lib');
   try {
     const doc = await PDFDocument.load(bytes, { updateMetadata: false });
     return { ok: true, doc, encriptado: false };

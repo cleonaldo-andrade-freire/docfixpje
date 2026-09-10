@@ -48,4 +48,4 @@ com contêiner QuickTime (`ftyp` brand `qt`, comum em vídeo de iPhone/WhatsApp,
 §16.6.1 da spec): ali só o `ftyp` e os offsets de `stco`/`co64` são
 reescritos, o `mdat` (vídeo/áudio) é copiado byte a byte. É JS puro, sem
 `ffmpeg.wasm`, sem `SharedArrayBuffer`, sem worker — implementado em
-`src/correcao/remuxMp4.ts`.
+`src/midia/remuxarMp4.ts`.

@@ -24,6 +24,7 @@ import {
   XMP_PDFA,
   OUTPUT_INTENT_PDFA,
 } from './lib/pdf-cru';
+import { montarMp4, montarMp4SemTrilha } from './lib/mp4-cru';
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
 export const DIR_FIXTURES = join(AQUI, '..', 'fixtures');
@@ -268,56 +269,6 @@ function mp3(frames: number): Uint8Array {
   return Buffer.concat(partes);
 }
 
-function caixaMp4(tipo: string, payload: Buffer): Buffer {
-  const cab = Buffer.alloc(8);
-  cab.writeUInt32BE(payload.length + 8, 0);
-  cab.write(tipo, 4, 'latin1');
-  return Buffer.concat([cab, payload]);
-}
-
-function mp4(payloadMdat: Buffer): Uint8Array {
-  const ftyp = caixaMp4(
-    'ftyp',
-    Buffer.concat([
-      Buffer.from('isom', 'latin1'),
-      Buffer.from([0x00, 0x00, 0x00, 0x00]),
-      Buffer.from('isommp41', 'latin1'),
-    ]),
-  );
-  const moov = caixaMp4('moov', caixaMp4('mvhd', Buffer.alloc(96, 0x00)));
-  const mdat = caixaMp4('mdat', payloadMdat);
-  return Buffer.concat([ftyp, moov, mdat]);
-}
-
-/**
- * stsd com uma sample entry por codec. `avc1` ganha os 78 bytes fixos do
- * VisualSampleEntry (ISO 14496-12 §12.1.3) e `mp4a` os 28 bytes fixos do
- * AudioSampleEntry versão 0 (§12.2.3), porque o remux (remuxMp4.ts) lê essas
- * estruturas de verdade; os demais formatos são só o cabeçalho tipo/tamanho.
- */
-function stsd(...codecs: string[]): Buffer {
-  const versionFlags = Buffer.alloc(4, 0x00);
-  const contagem = Buffer.alloc(4);
-  contagem.writeUInt32BE(codecs.length, 0);
-  const corpoPorCodec: Record<string, number> = { avc1: 78, mp4a: 28 };
-  const entradas = codecs.map((c) => caixaMp4(c, Buffer.alloc(corpoPorCodec[c] ?? 0, 0x00)));
-  return caixaMp4('stsd', Buffer.concat([versionFlags, contagem, ...entradas]));
-}
-
-/**
- * MP4 com contêiner QuickTime (`ftyp` brand "qt") — o formato real de vídeos
- * de iPhone/WhatsApp que o PJe recusa mesmo com extensão .mp4 (§16.6).
- */
-function mp4QuickTime(payloadMdat: Buffer, codecs: string[]): Uint8Array {
-  const ftyp = caixaMp4('ftyp', Buffer.concat([Buffer.from('qt  ', 'latin1'), Buffer.alloc(4, 0x00)]));
-  const stbl = caixaMp4('stbl', stsd(...codecs));
-  const minf = caixaMp4('minf', stbl);
-  const mdia = caixaMp4('mdia', minf);
-  const trak = caixaMp4('trak', mdia);
-  const moov = caixaMp4('moov', trak);
-  const mdat = caixaMp4('mdat', payloadMdat);
-  return Buffer.concat([ftyp, moov, mdat]);
-}
 
 // ─────────────────────────────────────────────────────────────── orquestração
 
@@ -359,10 +310,16 @@ export async function gerarTodas(): Promise<Record<string, Uint8Array>> {
     'imagens-pesadas.pdf': pdfComTamanho(25 * 1024 * 1024, 'Fixture pesada para testar compressao (Fase 2).'),
     'audio.mp3': mp3(60),
     'audio-grande.mp3': mp3(Math.ceil((TAMANHO_MAX_BYTES + 1) / 417)),
-    'video.mp4': mp4(Buffer.alloc(2048, 0x00)),
-    'video-grande.mp4': mp4(Buffer.alloc(TAMANHO_MAX_BYTES + 1, 0x00)),
-    'video-quicktime.mp4': mp4QuickTime(Buffer.alloc(2048, 0x00), ['avc1', 'mp4a']),
-    'video-quicktime-codec-nao-suportado.mp4': mp4QuickTime(Buffer.alloc(2048, 0x00), ['hvc1', 'mp4a']),
+    'video.mp4': montarMp4(),
+    'video-grande.mp4': montarMp4({ recheioMdat: TAMANHO_MAX_BYTES + 1 }),
+    // O caso real que o PJe recusa: container QuickTime com extensão .mp4,
+    // `moov` antes do `mdat` (o remux precisa relocar os chunks).
+    'video-quicktime.mp4': montarMp4({ quicktime: true, moovPrimeiro: true }),
+    'video-quicktime-so-video.mp4': montarMp4({ quicktime: true, comAudio: false }),
+    // iPhone recente grava HEVC: o remux produziria um MP4 conforme que o PJe
+    // recusaria do mesmo jeito, então tem de ser recusado antes.
+    'video-quicktime-hevc.mp4': montarMp4({ quicktime: true, codecVideo: 'hvc1' }),
+    'video-sem-trilha.mp4': montarMp4SemTrilha(),
   };
 
   // Normaliza para Uint8Array puro do realm atual: sob vitest, Buffer do Node

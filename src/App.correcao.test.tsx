@@ -115,7 +115,31 @@ test('correção de MP4 QuickTime (remux) não mostra o aviso legal de assinatur
   // página" — texto de PDF. Remux de vídeo não remove assinatura nenhuma
   // (vídeo não tem), então não faz sentido mostrá-lo aqui.
   const user = userEvent.setup();
-  render(<App fabricaWorker={fabricaValidacao} fabricaWorkerCorrecao={fabricaCorrecao([])} />);
+  // O remux vai para o worker de mídia, não para o de PDF — por isso a fábrica
+  // é injetada separadamente.
+  render(
+    <App
+      fabricaWorker={fabricaValidacao}
+      fabricaWorkerCorrecao={fabricaCorrecao([])}
+      fabricaWorkerMidia={fabricaCorrecao([
+        {
+          tipo: 'resultado',
+          resultado: {
+            tentada: true,
+            estrategias: ['REMUXAR_MP4'],
+            sucesso: true,
+            tamanhoAntes: 100,
+            tamanhoDepois: 100,
+            textoPreservado: true,
+            avisos: [],
+            duracaoMs: 1,
+            revalidacao: { apto: true, ocorrencias: [] },
+          },
+          bufferCorrigido: new Uint8Array([1, 2, 3]).buffer,
+        },
+      ])}
+    />,
+  );
   await user.upload(screen.getByLabelText(/selecionar arquivos/i), [
     fixtureFile('video-quicktime.mp4'),
   ]);

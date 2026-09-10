@@ -1,7 +1,8 @@
 import type { Ocorrencia, TipoDetectado } from '../tipos';
-import type { ContextoArquivo } from './contexto';
+import { ehVideo, type ContextoArquivo } from './contexto';
 import { validarAssinatura } from './assinatura';
 import { validarTamanho } from './tamanho';
+import { validarContainer } from './container';
 import { validarPdfaDeclaracao } from './pdfaDeclaracao';
 import { validarPdfaEstrutura } from './pdfaEstrutura';
 
@@ -38,6 +39,12 @@ export const VALIDADORES: readonly Validador[] = [
     etapa: 'Verificando o formato PDF/A…',
     aplicaA: soPdf,
     executar: validarPdfaEstrutura,
+  },
+  {
+    nome: 'container',
+    etapa: 'Verificando o formato do vídeo…',
+    aplicaA: ehVideo,
+    executar: validarContainer,
   },
   {
     nome: 'tamanho',

@@ -10,6 +10,7 @@ const ctxFake = (tamanhoBytes: number, tipo: TipoDetectado): ContextoArquivo => 
   tamanhoBytes,
   tipo,
   pdf: null,
+  midia: null,
   config: { pdfa: { pdfaObrigatorio: true, pdfaGravidade: 'aviso', pdfaPartesAceitas: [1, 2, 3, 4] } },
 });
 

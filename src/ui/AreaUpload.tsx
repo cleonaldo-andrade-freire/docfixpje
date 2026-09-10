@@ -1,7 +1,6 @@
 import { useId, useState } from 'react';
 import { LIMITES } from '../config/limites';
 import { detectarTipo } from '../deteccao/detectarTipo';
-import { ehContainerQuickTime } from '../deteccao/quicktimeMp4';
 import { formatarTamanho } from '../infra/formato';
 import type { ItemArquivo } from '../estado/store';
 import css from './AreaUpload.module.css';
@@ -55,17 +54,15 @@ async function montarItem(file: File): Promise<ItemArquivo> {
   if (file.size > LIMITES.TAMANHO_ABSOLUTO_LEITURA_BYTES) {
     return itemReprovadoPorTamanho(file);
   }
+  // Só o cabeçalho: `detectarTipo` decide pela brand do `ftyp`, que cabe nos
+  // primeiros bytes. O selo de um QuickTime sai como "MOV" — a primeira pista
+  // visível de que a extensão .mp4 está mentindo. Se o codec é remuxável ou
+  // não, quem diz é a validação completa, com o arquivo inteiro em mãos.
   const cabecalho = new Uint8Array(await file.slice(0, 1024).arrayBuffer());
-  // Só olha a brand do ftyp aqui, nunca o codec: o moov de um vídeo real
-  // passa fácil dessa janela de preview, e exigir o moov inteiro (só pra
-  // decidir o selo) faria o preview deixar de ser rápido. Se o codec não for
-  // avc1/mp4a, isso aparece corretamente na validação completa, com o
-  // arquivo inteiro.
-  const tipoRapido = ehContainerQuickTime(cabecalho) ? 'video/mp4' : detectarTipo(cabecalho);
   return {
     id: novoId(),
     file,
-    tipoRapido,
+    tipoRapido: detectarTipo(cabecalho),
     estado: 'aguardando',
     etapa: null,
     resultado: null,

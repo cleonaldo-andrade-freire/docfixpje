@@ -449,7 +449,7 @@ O remux reconstrói `moov` do zero (não só copia e ajusta offsets),
 descartando as caixas acima em qualquer profundidade onde apareçam e
 normalizando a sample entry de áudio, recalculando o tamanho de cada caixa
 ancestral e o delta final aplicado a `stco`/`co64`. Implementado em
-`src/correcao/remuxMp4.ts`.
+`src/midia/remuxarMp4.ts`.
 
 Só corrige quando o codec interno é avc1 (vídeo) + mp4a (áudio) — a única
 combinação que o remux sabe preservar com segurança. QuickTime com outro

@@ -75,6 +75,7 @@ upload (AreaUpload) ──► store (useReducer) ──► orquestrador
                                                   ├─ assinatura   (Regra 1)
                                                   ├─ pdfaDeclaracao(Regra 3 nível 1)
                                                   ├─ pdfaEstrutura (Regra 3 nível 2)
+                                                  ├─ container     (Regra 4, só vídeo)
                                                   └─ tamanho       (Regra 2)
                                                   ▼
                                           ResultadoValidacao ─► máquina de estados ─► UI
@@ -108,3 +109,12 @@ após `npm run test:e2e`.
   `/Type /FontDescriptor` sem `/FontFile*`.
 - Toda a Regra 3 segue `PDFA.pdfaGravidade` (padrão `aviso`), então um PDF comum
   continua **apto**.
+- **Regra 4 (container de vídeo)** nasceu de um caso real: um arquivo `.MP4` que
+  tocava em qualquer player e passava na validação, mas o PJe recusava. Por
+  dentro era QuickTime (`ftyp` brand `qt  `, `mp4a` v1 com `esds` dentro de
+  `wave`, `dref` `alis`). A correção é um **remux** — `src/midia/remuxarMp4.ts`
+  troca o container e copia as amostras H.264/AAC intactas, sem recodificar.
+- O mesmo caso expôs um bug na detecção: `ehMp3` varria 4 KB atrás de um frame
+  sync MPEG e casava por acaso em quase qualquer binário, então o MOV era
+  classificado como `audio/mpeg` e passava batido. Agora o header é validado
+  campo a campo e exige um segundo frame encadeado.

@@ -6,7 +6,7 @@ import { iniciarOciosidade } from './infra/ociosidade';
 import { criarDownload, descartar } from './infra/blobRegistry';
 import { processarLote, type FabricaWorker } from './execucao/orquestrador';
 import { corrigirArquivo, type FabricaWorkerCorrecao } from './correcao/corrigirArquivo';
-import { nomeCorrigido } from './correcao/nomeCorrigido';
+import { saidaCorrigida } from './correcao/nomeCorrigido';
 import { AvisoPrivacidade } from './ui/AvisoPrivacidade';
 import { AvisoLegalCorrecao } from './ui/AvisoLegalCorrecao';
 import { AreaUpload } from './ui/AreaUpload';
@@ -18,9 +18,11 @@ interface PropsApp {
   /** Injetáveis em teste. Em produção, os orquestradores usam os workers reais. */
   fabricaWorker?: FabricaWorker | undefined;
   fabricaWorkerCorrecao?: FabricaWorkerCorrecao | undefined;
+  /** Worker do remux de vídeo; separado por não carregar o motor de PDF. */
+  fabricaWorkerMidia?: FabricaWorkerCorrecao | undefined;
 }
 
-function AppInterno({ fabricaWorker, fabricaWorkerCorrecao }: PropsApp) {
+function AppInterno({ fabricaWorker, fabricaWorkerCorrecao, fabricaWorkerMidia }: PropsApp) {
   const { estado, dispatch } = useStore();
   const [validando, setValidando] = useState(false);
   const [corrigindoId, setCorrigindoId] = useState<string | null>(null);
@@ -102,6 +104,7 @@ function AppInterno({ fabricaWorker, fabricaWorkerCorrecao }: PropsApp) {
             onEtapa: (m) => dispatch({ t: 'etapa', id, etapa: m }),
           },
           ...(fabricaWorkerCorrecao ? { fabricaWorker: fabricaWorkerCorrecao } : {}),
+          ...(fabricaWorkerMidia ? { fabricaWorkerMidia } : {}),
         });
 
         dispatch({
@@ -112,8 +115,8 @@ function AppInterno({ fabricaWorker, fabricaWorkerCorrecao }: PropsApp) {
         });
 
         if (saida.estadoDestino === 'corrigido' && saida.bufferCorrigido) {
-          const nome = nomeCorrigido(item.file.name);
-          const blob = new Blob([saida.bufferCorrigido], { type: 'application/pdf' });
+          const { nome, mime } = saidaCorrigida(item.file.name, item.resultado.tipoDetectado);
+          const blob = new Blob([saida.bufferCorrigido], { type: mime });
           const { url } = criarDownload(id, blob, nome);
           dispatch({ t: 'correcao', id, nome, url });
         }
@@ -122,7 +125,7 @@ function AppInterno({ fabricaWorker, fabricaWorkerCorrecao }: PropsApp) {
         setCorrigindoId(null);
       }
     },
-    [estado.itens, dispatch, fabricaWorkerCorrecao, avisoLegalMostrado],
+    [estado.itens, dispatch, fabricaWorkerCorrecao, fabricaWorkerMidia, avisoLegalMostrado],
   );
 
   const temAguardando = estado.itens.some((i) => i.estado === 'aguardando');
@@ -135,7 +138,7 @@ function AppInterno({ fabricaWorker, fabricaWorkerCorrecao }: PropsApp) {
         <h1 className={css.titulo}>Validador de arquivos para o PJe</h1>
         <p className={css.subtitulo}>
           Confira se um PDF, MP3 ou MP4 está pronto para anexar a uma petição — assinatura
-          digital, tamanho e formato PDF/A. Tudo no seu navegador.
+          digital, tamanho, formato PDF/A e vídeo em MP4 de verdade. Tudo no seu navegador.
         </p>
       </header>
 
@@ -184,12 +187,13 @@ function baixar(url: string, nome: string): void {
   a.remove();
 }
 
-export function App({ fabricaWorker, fabricaWorkerCorrecao }: PropsApp = {}) {
+export function App({ fabricaWorker, fabricaWorkerCorrecao, fabricaWorkerMidia }: PropsApp = {}) {
   return (
     <StoreProvider>
       <AppInterno
         fabricaWorker={fabricaWorker}
         fabricaWorkerCorrecao={fabricaWorkerCorrecao}
+        fabricaWorkerMidia={fabricaWorkerMidia}
       />
     </StoreProvider>
   );

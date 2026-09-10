@@ -1,6 +1,6 @@
 import { gerarTodas } from './gerar-fixtures';
 import { detectarTipo } from '../src/deteccao/detectarTipo';
-import { ehContainerQuickTime, codecMp4Suportado } from '../src/deteccao/quicktimeMp4';
+import { analisarMidia } from '../src/midia/remuxarMp4';
 import { varrerTrailerBruto } from '../src/pdf/estrutura';
 
 let fixtures: Record<string, Uint8Array>;
@@ -34,7 +34,9 @@ test('gera todas as fixtures esperadas', () => {
     'video.mp4',
     'video-grande.mp4',
     'video-quicktime.mp4',
-    'video-quicktime-codec-nao-suportado.mp4',
+    'video-quicktime-so-video.mp4',
+    'video-quicktime-hevc.mp4',
+    'video-sem-trilha.mp4',
   ];
   expect(Object.keys(fixtures).sort()).toEqual([...esperadas].sort());
 });
@@ -48,14 +50,24 @@ test('cada fixture tem o magic number do seu tipo', () => {
   expect(detectarTipo(fixtures['audio-grande.mp3']!)).toBe('audio/mpeg');
   expect(detectarTipo(fixtures['video.mp4']!)).toBe('video/mp4');
   expect(detectarTipo(fixtures['video-grande.mp4']!)).toBe('video/mp4');
+  // O ponto da fixture: extensão .mp4, conteúdo QuickTime.
+  expect(detectarTipo(fixtures['video-quicktime.mp4']!)).toBe('video/quicktime');
+  expect(detectarTipo(fixtures['video-quicktime-so-video.mp4']!)).toBe('video/quicktime');
   expect(detectarTipo(fixtures['falso.pdf']!)).toBeNull();
 });
 
-test('fixtures QuickTime (§16.6.1) têm brand qt e o codec certo em cada uma', () => {
-  expect(ehContainerQuickTime(fixtures['video-quicktime.mp4']!)).toBe(true);
-  expect(codecMp4Suportado(fixtures['video-quicktime.mp4']!)).toBe(true);
-  expect(ehContainerQuickTime(fixtures['video-quicktime-codec-nao-suportado.mp4']!)).toBe(true);
-  expect(codecMp4Suportado(fixtures['video-quicktime-codec-nao-suportado.mp4']!)).toBe(false);
+// Herdado dos testes contra o PJe real (§16.6.1): as fixtures QuickTime
+// precisam diferir no codec, porque só avc1/mp4a é remuxável de forma útil.
+test('fixtures QuickTime têm brand qt e cada uma o seu codec', () => {
+  const qt = analisarMidia(fixtures['video-quicktime.mp4']!);
+  expect(qt.container).toBe('quicktime');
+  expect(qt.remuxavel).toBe(true);
+  expect(qt.trilhas.map((t) => t.codec).sort()).toEqual(['avc1', 'mp4a']);
+
+  const hevc = analisarMidia(fixtures['video-quicktime-hevc.mp4']!);
+  expect(hevc.container).toBe('quicktime');
+  expect(hevc.remuxavel).toBe(false);
+  expect(hevc.trilhas.some((t) => t.codec === 'hvc1')).toBe(true);
 });
 
 test('fixtures de fronteira têm o tamanho exato', () => {

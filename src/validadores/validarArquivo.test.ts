@@ -75,26 +75,43 @@ describe('spec §14.1', () => {
     }
   });
 
-  test('MP4 com contêiner QuickTime (avc1/mp4a) -> MP4_CONTAINER_QUICKTIME, inapto, corrigível', async () => {
-    const r = await val('video-quicktime.mp4');
-    expect(r.tipoDetectado).toBe('video/mp4');
-    expect(cod(r)).toEqual(['MP4_CONTAINER_QUICKTIME']);
-    expect(r.apto).toBe(false);
-    expect(r.corrigivel).toBe(true);
-  });
-
-  test('MP4 QuickTime com codec não suportado (ex.: HEVC) -> FORMATO_NAO_SUPORTADO, não corrigível', async () => {
-    const r = await val('video-quicktime-codec-nao-suportado.mp4');
-    expect(cod(r)).toEqual(['FORMATO_NAO_SUPORTADO']);
-    expect(r.corrigivel).toBe(false);
-  });
-
   test('MP4/MP3 de dezenas de MB -> apto (limite de mídia é 200 MB, não 10)', async () => {
     for (const nome of ['video-grande.mp4', 'audio-grande.mp3']) {
       const r = await val(nome);
       expect(r.apto, nome).toBe(true);
       expect(cod(r), nome).toEqual([]);
     }
+  });
+
+  // O bug que motivou a Regra 4: o arquivo se chama .mp4, toca em qualquer
+  // player, passava na validação — e o PJe recusava o anexo.
+  test('QuickTime com extensão .mp4 -> CONTAINER_QUICKTIME, inapto e corrigível', async () => {
+    const r = await val('video-quicktime.mp4');
+    expect(r.tipoDetectado).toBe('video/quicktime');
+    expect(cod(r)).toContain('CONTAINER_QUICKTIME');
+    expect(r.apto).toBe(false);
+    expect(r.corrigivel).toBe(true);
+    expect(r.ocorrencias[0]!.correcaoDisponivel).toBe('REMUXAR_MP4');
+  });
+
+  test('QuickTime só com trilha de vídeo também é detectado', async () => {
+    const r = await val('video-quicktime-so-video.mp4');
+    expect(cod(r)).toContain('CONTAINER_QUICKTIME');
+  });
+
+  test('QuickTime em HEVC -> MIDIA_NAO_REMUXAVEL: convertê-lo não faria o PJe aceitar', async () => {
+    const r = await val('video-quicktime-hevc.mp4');
+    expect(cod(r)).toContain('MIDIA_NAO_REMUXAVEL');
+    expect(r.apto).toBe(false);
+    expect(r.corrigivel).toBe(false);
+    expect(r.ocorrencias[0]!.orientacao).toMatch(/H\.264/);
+  });
+
+  test('MP4 sem nenhuma trilha -> MIDIA_NAO_REMUXAVEL, inapto e NÃO corrigível', async () => {
+    const r = await val('video-sem-trilha.mp4');
+    expect(cod(r)).toContain('MIDIA_NAO_REMUXAVEL');
+    expect(r.apto).toBe(false);
+    expect(r.corrigivel).toBe(false);
   });
 
   test('PDF/A-1b -> apto, pdfaParte 1, conformidade B, sem ocorrências', async () => {

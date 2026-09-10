@@ -52,16 +52,18 @@ test('selecionar 2 arquivos chama onArquivos com tipoRapido detectado', async ()
   expect(itens[0].estado).toBe('aguardando');
 });
 
-test('mp4 QuickTime (iPhone/WhatsApp) -> tipoRapido video/mp4, não audio/mpeg nem null', async () => {
+test('mp4 QuickTime (iPhone/WhatsApp) -> tipoRapido video/quicktime, não audio/mpeg nem null', async () => {
+  // O selo diz "MOV": é a primeira pista visível de que a extensão .mp4 está
+  // mentindo. Antes isto caía no falso positivo de MP3 e virava audio/mpeg.
   const onArquivos = vi.fn();
   render(<AreaUpload totalAtual={0} onArquivos={onArquivos} onRecusa={() => {}} />);
   const input = screen.getByLabelText(/selecionar arquivos/i);
   await userEvent.upload(input, arquivoMp4QuickTime('video.mp4'));
   const item = onArquivos.mock.calls[0]![0][0];
-  expect(item.tipoRapido).toBe('video/mp4');
+  expect(item.tipoRapido).toBe('video/quicktime');
 });
 
-test('mp4 QuickTime com moov maior que a janela de preview -> tipoRapido ainda assim video/mp4', async () => {
+test('mp4 QuickTime com moov maior que a janela de preview -> tipoRapido ainda assim video/quicktime', async () => {
   // Caso real: o moov de um vídeo de iPhone facilmente passa dos ~4 KB que o
   // preview lê antes de "Validar" — o selo não pode depender de enxergar o
   // moov inteiro (isso só acontece na validação completa, com o arquivo todo).
@@ -77,7 +79,7 @@ test('mp4 QuickTime com moov maior que a janela de preview -> tipoRapido ainda a
   const input = screen.getByLabelText(/selecionar arquivos/i);
   await userEvent.upload(input, arquivo);
   const item = onArquivos.mock.calls[0]![0][0];
-  expect(item.tipoRapido).toBe('video/mp4');
+  expect(item.tipoRapido).toBe('video/quicktime');
 });
 
 test('lote acima do máximo -> onRecusa, sem onArquivos', async () => {
