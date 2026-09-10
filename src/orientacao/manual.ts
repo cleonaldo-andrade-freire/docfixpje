@@ -99,6 +99,34 @@ export function montarOrientacaoManual(ocorrencias: Ocorrencia[]): OrientacaoMan
     });
   }
 
+  if (codigos.has('CONTAINER_QUICKTIME')) {
+    out.push({
+      resumo: 'O vídeo está em container QuickTime; converta para MP4:',
+      passos: [
+        {
+          titulo: 'Use a correção automática desta ferramenta',
+          detalhe:
+            'O botão "Corrigir" troca o container para MP4 sem recodificar — a imagem e o som saem idênticos. ' +
+            'Se preferir fazer fora, exporte como MP4 (H.264 + AAC) em qualquer conversor de vídeo.',
+        },
+      ],
+    });
+  }
+
+  if (codigos.has('MIDIA_NAO_REMUXAVEL')) {
+    out.push({
+      resumo: 'O vídeo precisa ser recodificado fora desta ferramenta:',
+      passos: [
+        {
+          titulo: 'Exporte como MP4 (H.264 + AAC)',
+          detalhe:
+            'Abra o arquivo num conversor de vídeo (VLC, HandBrake ou o editor que gerou o vídeo) e exporte em MP4 ' +
+            'com vídeo H.264 e áudio AAC. Depois valide o arquivo gerado aqui.',
+        },
+      ],
+    });
+  }
+
   if (codigos.has('ARQUIVO_CRIPTOGRAFADO')) {
     out.push({
       resumo: 'O arquivo está protegido por senha:',

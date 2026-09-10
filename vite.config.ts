@@ -34,7 +34,18 @@ export default defineConfig({
   server: { headers: headersDev },
   preview: { headers: headersProducao },
   // Worker como ES module: o worker faz import() dinâmico do adaptador do motor.
-  worker: { format: 'es' },
+  worker: {
+    format: 'es',
+    rollupOptions: {
+      output: {
+        // O pdf-lib só entra no grafo pelos workers, e por import dinâmico
+        // (`pdf/estrutura.ts`). Nomear o chunk deixa claro no build que ele é
+        // carregado sob demanda e compartilhado — sem isso o Rollup o batiza de
+        // `index-<hash>.js`, indistinguível do chunk de entrada da página.
+        manualChunks: (id: string) => (id.includes('node_modules/pdf-lib') ? 'pdf-lib' : undefined),
+      },
+    },
+  },
   build: {
     rollupOptions: {
       input: {

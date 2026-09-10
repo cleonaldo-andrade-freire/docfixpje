@@ -2,6 +2,7 @@ import type { TipoDetectado, ConformidadePdfa } from '../tipos';
 import { PDFA } from '../config/limites';
 import { carregarPdf, varrerTrailerBruto, type CargaPdf, type TrailerBruto } from '../pdf/estrutura';
 import { extrairXmp, lerPdfaId } from '../pdf/xmp';
+import { analisarMidia, type AnaliseMidia } from '../midia/remuxarMp4';
 
 export interface ConfigValidacao {
   pdfa: {
@@ -33,7 +34,19 @@ export interface ContextoArquivo {
   tipo: TipoDetectado | null;
   /** null quando não é PDF. */
   pdf: ContextoPdf | null;
+  /** null quando não é MP4/MOV. */
+  midia: AnaliseMidia | null;
   config: ConfigValidacao;
+}
+
+/** Tipos que passam pelo analisador de container ISO BMFF. */
+export function ehVideo(tipo: TipoDetectado | null): boolean {
+  return tipo === 'video/mp4' || tipo === 'video/quicktime';
+}
+
+/** Tipos com o teto de tamanho de mídia, não o de PDF. */
+export function ehMidia(tipo: TipoDetectado | null): boolean {
+  return tipo === 'audio/mpeg' || ehVideo(tipo);
 }
 
 export async function montarContexto(
@@ -50,5 +63,8 @@ export async function montarContexto(
     const pdfaId = xmp ? lerPdfaId(xmp) : null;
     pdf = { carga, trailer, xmp, pdfaId };
   }
-  return { nomeArquivo, bytes, tamanhoBytes: bytes.length, tipo, pdf, config };
+
+  const midia = ehVideo(tipo) ? analisarMidia(bytes) : null;
+
+  return { nomeArquivo, bytes, tamanhoBytes: bytes.length, tipo, pdf, midia, config };
 }

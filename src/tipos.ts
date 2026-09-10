@@ -3,7 +3,7 @@
  * Os validadores produzem `Ocorrencia[]`; o orquestrador monta `ResultadoValidacao`.
  */
 
-export type TipoDetectado = 'application/pdf' | 'audio/mpeg' | 'video/mp4';
+export type TipoDetectado = 'application/pdf' | 'audio/mpeg' | 'video/mp4' | 'video/quicktime';
 
 export type Gravidade = 'erro' | 'aviso';
 
@@ -13,6 +13,8 @@ export type CodigoOcorrencia =
   | 'RESTRICAO_DOCMDP'
   | 'TAMANHO_EXCEDIDO'
   | 'FORMATO_NAO_SUPORTADO'
+  | 'CONTAINER_QUICKTIME'
+  | 'MIDIA_NAO_REMUXAVEL'
   | 'ARQUIVO_CRIPTOGRAFADO'
   | 'ARQUIVO_CORROMPIDO'
   | 'PDFA_NAO_DECLARADO'
@@ -29,7 +31,8 @@ export type EstrategiaCorrecao =
   | 'REMOVER_ASSINATURA'
   | 'CONVERTER_PDFA'
   | 'COMPRIMIR_PDF'
-  | 'RECODIFICAR_MIDIA';
+  | 'RECODIFICAR_MIDIA'
+  | 'REMUXAR_MP4';
 
 export type ConformidadePdfa = 'A' | 'B' | 'U';
 
@@ -82,6 +85,8 @@ export const CODIGOS_OCORRENCIA = [
   'RESTRICAO_DOCMDP',
   'TAMANHO_EXCEDIDO',
   'FORMATO_NAO_SUPORTADO',
+  'CONTAINER_QUICKTIME',
+  'MIDIA_NAO_REMUXAVEL',
   'ARQUIVO_CRIPTOGRAFADO',
   'ARQUIVO_CORROMPIDO',
   'PDFA_NAO_DECLARADO',
@@ -100,4 +105,5 @@ export const ESTRATEGIAS_CORRECAO = [
   'CONVERTER_PDFA',
   'COMPRIMIR_PDF',
   'RECODIFICAR_MIDIA',
+  'REMUXAR_MP4',
 ] as const satisfies readonly EstrategiaCorrecao[];

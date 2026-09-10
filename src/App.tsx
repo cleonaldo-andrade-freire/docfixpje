@@ -6,7 +6,7 @@ import { iniciarOciosidade } from './infra/ociosidade';
 import { criarDownload, descartar } from './infra/blobRegistry';
 import { processarLote, type FabricaWorker } from './execucao/orquestrador';
 import { corrigirArquivo, type FabricaWorkerCorrecao } from './correcao/corrigirArquivo';
-import { nomeCorrigido } from './correcao/nomeCorrigido';
+import { saidaCorrigida } from './correcao/nomeCorrigido';
 import { AvisoPrivacidade } from './ui/AvisoPrivacidade';
 import { AvisoLegalCorrecao } from './ui/AvisoLegalCorrecao';
 import { AreaUpload } from './ui/AreaUpload';
@@ -108,8 +108,8 @@ function AppInterno({ fabricaWorker, fabricaWorkerCorrecao }: PropsApp) {
         });
 
         if (saida.estadoDestino === 'corrigido' && saida.bufferCorrigido) {
-          const nome = nomeCorrigido(item.file.name);
-          const blob = new Blob([saida.bufferCorrigido], { type: 'application/pdf' });
+          const { nome, mime } = saidaCorrigida(item.file.name, item.resultado.tipoDetectado);
+          const blob = new Blob([saida.bufferCorrigido], { type: mime });
           const { url } = criarDownload(id, blob, nome);
           dispatch({ t: 'correcao', id, nome, url });
         }
@@ -131,7 +131,7 @@ function AppInterno({ fabricaWorker, fabricaWorkerCorrecao }: PropsApp) {
         <h1 className={css.titulo}>Validador de arquivos para o PJe</h1>
         <p className={css.subtitulo}>
           Confira se um PDF, MP3 ou MP4 está pronto para anexar a uma petição — assinatura
-          digital, tamanho e formato PDF/A. Tudo no seu navegador.
+          digital, tamanho, formato PDF/A e vídeo em MP4 de verdade. Tudo no seu navegador.
         </p>
       </header>
 

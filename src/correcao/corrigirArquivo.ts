@@ -41,6 +41,9 @@ const RESULTADO_VAZIO: ResultadoCorrecao = {
 const fabricaPadrao: FabricaWorkerCorrecao = () =>
   new Worker(new URL('../workers/pdf.worker.ts', import.meta.url), { type: 'module' });
 
+const fabricaMidiaPadrao: FabricaWorkerCorrecao = () =>
+  new Worker(new URL('../workers/midia.worker.ts', import.meta.url), { type: 'module' });
+
 export async function corrigirArquivo(params: {
   nomeArquivo: string;
   tipo: TipoDetectado | null;
@@ -49,6 +52,8 @@ export async function corrigirArquivo(params: {
   config?: ConfigValidacao;
   cb: CallbacksCorrecao;
   fabricaWorker?: FabricaWorkerCorrecao;
+  /** Worker do remux de vídeo; separado porque não carrega o motor de PDF. */
+  fabricaWorkerMidia?: FabricaWorkerCorrecao;
   timeoutMs?: number;
 }): Promise<SaidaCorrecao> {
   const { nomeArquivo, tipo, bytes, ocorrencias, config, cb } = params;
@@ -68,17 +73,24 @@ export async function corrigirArquivo(params: {
     };
   }
 
-  if (tipo === 'audio/mpeg' || tipo === 'video/mp4') {
+  // Vídeo com container QuickTime é corrigível por remux; o resto da mídia não.
+  const ehVideo = tipo === 'video/mp4' || tipo === 'video/quicktime';
+  const remuxavel = ehVideo && cod.has('CONTAINER_QUICKTIME');
+
+  if ((tipo === 'audio/mpeg' || ehVideo) && !remuxavel) {
     return {
       estadoDestino: 'nao_corrigivel',
       resultado: { ...RESULTADO_VAZIO },
       bufferCorrigido: null,
-      orientacao:
-        'Para MP3/MP4 acima do limite, reduza a duração ou recodifique com bitrate menor no seu editor. A recodificação automática de mídia não está disponível nesta versão.',
+      orientacao: cod.has('MIDIA_NAO_REMUXAVEL')
+        ? 'Recodifique o vídeo para MP4 (H.264 + AAC) num conversor de vídeo e valide o arquivo gerado.'
+        : 'Para MP3/MP4 acima do limite, reduza a duração ou recodifique com bitrate menor no seu editor. A recodificação automática de mídia não está disponível nesta versão.',
     };
   }
 
-  const worker = params.fabricaWorker ? params.fabricaWorker() : fabricaPadrao();
+  const worker = remuxavel
+    ? (params.fabricaWorkerMidia ?? fabricaMidiaPadrao)()
+    : (params.fabricaWorker ?? fabricaPadrao)();
 
   const operacao = new Promise<SaidaCorrecao>((resolve) => {
     worker.onmessage = (ev: MessageEvent<DaCorrecao>) => {

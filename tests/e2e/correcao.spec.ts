@@ -52,6 +52,35 @@ test('MP4 de dezenas de MB → apto (limite de mídia é 200 MB, não 10)', asyn
   await expect(linha.getByRole('button', { name: /tentar corrigir/i })).toHaveCount(0);
 });
 
+// O caso que motivou a Regra 4: arquivo chamado .mp4, conteúdo QuickTime. Tocava
+// em qualquer player, passava na validação — e o PJe recusava o anexo.
+test('QuickTime disfarçado de .mp4 → Tentar corrigir → MP4 pronto para anexar', async ({ page }) => {
+  await validar(page, 'video-quicktime.mp4');
+  const linha = page.getByRole('listitem', { name: 'video-quicktime.mp4' });
+
+  // A mensagem sai no resumo da linha e no painel de diagnóstico.
+  await expect(linha.getByText(/por dentro é um vídeo QuickTime/i).first()).toBeVisible();
+  await linha.getByRole('button', { name: /tentar corrigir/i }).click();
+
+  await expect(linha.getByText('Corrigido — revalidado com sucesso')).toBeVisible({ timeout: 15_000 });
+  await expect(linha.getByRole('link', { name: /baixar arquivo corrigido/i })).toHaveAttribute(
+    'download',
+    'video-quicktime-corrigido.mp4',
+  );
+});
+
+test('a correção de vídeo não baixa o motor de PDF', async ({ page }) => {
+  const pedidos: string[] = [];
+  page.on('request', (r) => pedidos.push(r.url()));
+
+  await validar(page, 'video-quicktime.mp4');
+  const linha = page.getByRole('listitem', { name: 'video-quicktime.mp4' });
+  await linha.getByRole('button', { name: /tentar corrigir/i }).click();
+  await expect(linha.getByText('Corrigido — revalidado com sucesso')).toBeVisible({ timeout: 15_000 });
+
+  expect(pedidos.filter((u) => /\/motores\/.*\.wasm/.test(u))).toEqual([]);
+});
+
 test('nenhuma requisição a terceiros durante um ciclo de correção', async ({ page }) => {
   const externas: string[] = [];
   page.on('request', (r) => {

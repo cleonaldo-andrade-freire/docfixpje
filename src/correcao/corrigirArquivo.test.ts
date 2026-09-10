@@ -83,7 +83,7 @@ test('PDF com restrições (PDFA_CRIPTOGRAFADO, abre sem senha) -> vai para o wo
   expect(fab.criados).toBe(1);
 });
 
-test('MP4 -> nao_corrigivel com orientação de mídia, sem worker', async () => {
+test('MP4 grande demais -> nao_corrigivel com orientação de mídia, sem worker', async () => {
   const fab = fabricaComResposta([]);
   const s = await corrigirArquivo({
     nomeArquivo: 'v.mp4',
@@ -95,6 +95,40 @@ test('MP4 -> nao_corrigivel com orientação de mídia, sem worker', async () =>
   });
   expect(s.estadoDestino).toBe('nao_corrigivel');
   expect(s.orientacao).toMatch(/bitrate menor/i);
+  expect(fab.criados).toBe(0);
+});
+
+test('QuickTime -> vai para o worker de mídia, não para o de PDF', async () => {
+  const pdf = fabricaComResposta([]);
+  const midia = fabricaComResposta([
+    { tipo: 'resultado', resultado: resultadoOk, bufferCorrigido: new Uint8Array([9]).buffer },
+  ]);
+  const s = await corrigirArquivo({
+    nomeArquivo: 'v.mp4',
+    tipo: 'video/quicktime',
+    bytes: buf(),
+    ocorrencias: [oc('CONTAINER_QUICKTIME')],
+    cb,
+    fabricaWorker: pdf,
+    fabricaWorkerMidia: midia,
+  });
+  expect(s.estadoDestino).toBe('corrigido');
+  expect(midia.criados).toBe(1);
+  expect(pdf.criados).toBe(0); // o Ghostscript não é carregado para converter vídeo
+});
+
+test('vídeo não remuxável -> nao_corrigivel, mandando recodificar fora', async () => {
+  const fab = fabricaComResposta([]);
+  const s = await corrigirArquivo({
+    nomeArquivo: 'v.mp4',
+    tipo: 'video/mp4',
+    bytes: buf(),
+    ocorrencias: [oc('MIDIA_NAO_REMUXAVEL')],
+    cb,
+    fabricaWorkerMidia: fab,
+  });
+  expect(s.estadoDestino).toBe('nao_corrigivel');
+  expect(s.orientacao).toMatch(/H\.264/);
   expect(fab.criados).toBe(0);
 });
 

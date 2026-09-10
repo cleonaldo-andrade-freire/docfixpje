@@ -32,6 +32,9 @@ test('gera todas as fixtures esperadas', () => {
     'audio-grande.mp3',
     'video.mp4',
     'video-grande.mp4',
+    'video-quicktime.mp4',
+    'video-quicktime-so-video.mp4',
+    'video-sem-trilha.mp4',
   ];
   expect(Object.keys(fixtures).sort()).toEqual([...esperadas].sort());
 });
@@ -45,6 +48,9 @@ test('cada fixture tem o magic number do seu tipo', () => {
   expect(detectarTipo(fixtures['audio-grande.mp3']!)).toBe('audio/mpeg');
   expect(detectarTipo(fixtures['video.mp4']!)).toBe('video/mp4');
   expect(detectarTipo(fixtures['video-grande.mp4']!)).toBe('video/mp4');
+  // O ponto da fixture: extensão .mp4, conteúdo QuickTime.
+  expect(detectarTipo(fixtures['video-quicktime.mp4']!)).toBe('video/quicktime');
+  expect(detectarTipo(fixtures['video-quicktime-so-video.mp4']!)).toBe('video/quicktime');
   expect(detectarTipo(fixtures['falso.pdf']!)).toBeNull();
 });
 

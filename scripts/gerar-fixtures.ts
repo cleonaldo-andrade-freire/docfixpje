@@ -24,6 +24,7 @@ import {
   XMP_PDFA,
   OUTPUT_INTENT_PDFA,
 } from './lib/pdf-cru';
+import { montarMp4, montarMp4SemTrilha } from './lib/mp4-cru';
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
 export const DIR_FIXTURES = join(AQUI, '..', 'fixtures');
@@ -268,26 +269,6 @@ function mp3(frames: number): Uint8Array {
   return Buffer.concat(partes);
 }
 
-function caixaMp4(tipo: string, payload: Buffer): Buffer {
-  const cab = Buffer.alloc(8);
-  cab.writeUInt32BE(payload.length + 8, 0);
-  cab.write(tipo, 4, 'latin1');
-  return Buffer.concat([cab, payload]);
-}
-
-function mp4(payloadMdat: Buffer): Uint8Array {
-  const ftyp = caixaMp4(
-    'ftyp',
-    Buffer.concat([
-      Buffer.from('isom', 'latin1'),
-      Buffer.from([0x00, 0x00, 0x00, 0x00]),
-      Buffer.from('isommp41', 'latin1'),
-    ]),
-  );
-  const moov = caixaMp4('moov', caixaMp4('mvhd', Buffer.alloc(96, 0x00)));
-  const mdat = caixaMp4('mdat', payloadMdat);
-  return Buffer.concat([ftyp, moov, mdat]);
-}
 
 // ─────────────────────────────────────────────────────────────── orquestração
 
@@ -329,8 +310,13 @@ export async function gerarTodas(): Promise<Record<string, Uint8Array>> {
     'imagens-pesadas.pdf': pdfComTamanho(25 * 1024 * 1024, 'Fixture pesada para testar compressao (Fase 2).'),
     'audio.mp3': mp3(60),
     'audio-grande.mp3': mp3(Math.ceil((TAMANHO_MAX_BYTES + 1) / 417)),
-    'video.mp4': mp4(Buffer.alloc(2048, 0x00)),
-    'video-grande.mp4': mp4(Buffer.alloc(TAMANHO_MAX_BYTES + 1, 0x00)),
+    'video.mp4': montarMp4(),
+    'video-grande.mp4': montarMp4({ recheioMdat: TAMANHO_MAX_BYTES + 1 }),
+    // O caso real que o PJe recusa: container QuickTime com extensão .mp4,
+    // `moov` antes do `mdat` (o remux precisa relocar os chunks).
+    'video-quicktime.mp4': montarMp4({ quicktime: true, moovPrimeiro: true }),
+    'video-quicktime-so-video.mp4': montarMp4({ quicktime: true, comAudio: false }),
+    'video-sem-trilha.mp4': montarMp4SemTrilha(),
   };
 
   // Normaliza para Uint8Array puro do realm atual: sob vitest, Buffer do Node

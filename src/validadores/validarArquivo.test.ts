@@ -83,6 +83,29 @@ describe('spec §14.1', () => {
     }
   });
 
+  // O bug que motivou a Regra 4: o arquivo se chama .mp4, toca em qualquer
+  // player, passava na validação — e o PJe recusava o anexo.
+  test('QuickTime com extensão .mp4 -> CONTAINER_QUICKTIME, inapto e corrigível', async () => {
+    const r = await val('video-quicktime.mp4');
+    expect(r.tipoDetectado).toBe('video/quicktime');
+    expect(cod(r)).toContain('CONTAINER_QUICKTIME');
+    expect(r.apto).toBe(false);
+    expect(r.corrigivel).toBe(true);
+    expect(r.ocorrencias[0]!.correcaoDisponivel).toBe('REMUXAR_MP4');
+  });
+
+  test('QuickTime só com trilha de vídeo também é detectado', async () => {
+    const r = await val('video-quicktime-so-video.mp4');
+    expect(cod(r)).toContain('CONTAINER_QUICKTIME');
+  });
+
+  test('MP4 sem nenhuma trilha -> MIDIA_NAO_REMUXAVEL, inapto e NÃO corrigível', async () => {
+    const r = await val('video-sem-trilha.mp4');
+    expect(cod(r)).toContain('MIDIA_NAO_REMUXAVEL');
+    expect(r.apto).toBe(false);
+    expect(r.corrigivel).toBe(false);
+  });
+
   test('PDF/A-1b -> apto, pdfaParte 1, conformidade B, sem ocorrências', async () => {
     const r = await val('pdfa-1b.pdf');
     expect(r.apto).toBe(true);
