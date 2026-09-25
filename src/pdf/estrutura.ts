@@ -103,6 +103,96 @@ export function varrerTrailerBruto(bytes: Uint8Array): TrailerBruto {
   };
 }
 
+/**
+ * Bits de permissão de /P (Tabela 22 da ISO 32000-1). São 1-indexados e a
+ * semântica é invertida em relação ao nome do campo: bit LIGADO = operação
+ * PERMITIDA. /P é um inteiro com sinal de 32 bits, e os bits reservados vêm
+ * ligados — daí os valores negativos típicos (-1340, -3904…).
+ */
+export interface PermissoesPdf {
+  /** Valor bruto de /P. */
+  p: number;
+  /** bit 3 — imprimir. */
+  imprimir: boolean;
+  /** bit 4 — alterar o conteúdo do documento. */
+  modificarConteudo: boolean;
+  /** bit 5 — copiar texto e gráficos. */
+  copiarTexto: boolean;
+  /** bit 6 — criar/alterar anotações e preencher campos de formulário. */
+  anotar: boolean;
+  /** bit 9 — preencher campos de formulário, inclusive campo de assinatura. */
+  preencherFormulario: boolean;
+  /** bit 11 — montar o documento (é o que autoriza o incremental update). */
+  montarDocumento: boolean;
+}
+
+export interface CriptografiaPdf {
+  /** /CFM do filtro de criptografia padrão (ex.: AESV3, AESV2, V2). */
+  metodo: string | null;
+  /** /V — algoritmo. */
+  v: number | null;
+  /** /R — revisão do handler de segurança. */
+  r: number | null;
+  /** null quando o dicionário não traz /P. */
+  permissoes: PermissoesPdf | null;
+}
+
+/** bit n (1-indexado) de um inteiro de 32 bits com sinal. */
+function bitLigado(p: number, n: number): boolean {
+  return (p & (1 << (n - 1))) !== 0;
+}
+
+/**
+ * Lê o dicionário de criptografia. Ele NUNCA é cifrado (senão não haveria como
+ * decifrar o resto), então a varredura por bytes sempre o alcança.
+ *
+ * Retorna null quando não há /Encrypt no trailer.
+ */
+export function varrerCriptografia(bytes: Uint8Array): CriptografiaPdf | null {
+  const s = comoTexto(bytes);
+  if (!/\/Encrypt\b/.test(s)) return null;
+
+  // /Encrypt costuma ser referência indireta: resolve o objeto apontado.
+  let dict: string | null = null;
+  const ref = s.match(/\/Encrypt\s+(\d+)\s+(\d+)\s+R/);
+  if (ref) {
+    const obj = new RegExp(`(?:^|[^0-9])${ref[1]}\\s+${ref[2]}\\s+obj([\\s\\S]{0,4000}?)endobj`).exec(s);
+    if (obj) dict = obj[1]!;
+  }
+  // Dicionário embutido no trailer, ou objeto não localizado: cai no filtro padrão.
+  if (dict === null) {
+    const inline = s.match(/<<[^<>]*\/Filter\s*\/Standard[\s\S]{0,2000}?>>/);
+    dict = inline ? inline[0] : null;
+  }
+  if (dict === null) return { metodo: null, v: null, r: null, permissoes: null };
+
+  const num = (chave: string): number | null => {
+    const m = dict!.match(new RegExp(`/${chave}\\s+(-?\\d+)`));
+    return m ? Number(m[1]) : null;
+  };
+
+  const cfm = dict.match(/\/CFM\s*\/(\w+)/);
+  const p = num('P');
+
+  return {
+    metodo: cfm ? cfm[1]! : null,
+    v: num('V'),
+    r: num('R'),
+    permissoes:
+      p === null
+        ? null
+        : {
+            p,
+            imprimir: bitLigado(p, 3),
+            modificarConteudo: bitLigado(p, 4),
+            copiarTexto: bitLigado(p, 5),
+            anotar: bitLigado(p, 6),
+            preencherFormulario: bitLigado(p, 9),
+            montarDocumento: bitLigado(p, 11),
+          },
+  };
+}
+
 export interface EstruturaPdfa {
   /** /OutputIntents com subtipo /GTS_PDFA1. */
   temOutputIntentPdfa: boolean;

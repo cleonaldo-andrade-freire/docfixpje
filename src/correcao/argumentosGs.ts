@@ -94,6 +94,7 @@ export function estrategiasDe(params: {
   const cod = new Set(params.ocorrencias.map((o) => o.codigo));
   const est: EstrategiaCorrecao[] = [];
   if (cod.has('ASSINATURA_PRESENTE') || cod.has('RESTRICAO_DOCMDP')) est.push('REMOVER_ASSINATURA');
+  if (cod.has('PDF_ASSINATURA_BLOQUEADA')) est.push('REMOVER_CRIPTOGRAFIA');
   if (params.converteuPdfa) est.push('CONVERTER_PDFA');
   if (params.comprimiu) est.push('COMPRIMIR_PDF');
   return est;

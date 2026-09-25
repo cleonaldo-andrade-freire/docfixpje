@@ -1,6 +1,7 @@
 import type { Ocorrencia, TipoDetectado } from '../tipos';
 import { ehVideo, type ContextoArquivo } from './contexto';
 import { validarAssinatura } from './assinatura';
+import { validarCriptografia } from './criptografia';
 import { validarTamanho } from './tamanho';
 import { validarContainer } from './container';
 import { validarPdfaDeclaracao } from './pdfaDeclaracao';
@@ -27,6 +28,12 @@ export const VALIDADORES: readonly Validador[] = [
     etapa: 'Procurando assinatura digital…',
     aplicaA: soPdf,
     executar: validarAssinatura,
+  },
+  {
+    nome: 'criptografia',
+    etapa: 'Verificando as permissões do documento…',
+    aplicaA: soPdf,
+    executar: validarCriptografia,
   },
   {
     nome: 'pdfaDeclaracao',

@@ -1,6 +1,6 @@
 import { CODIGOS_OCORRENCIA, ESTRATEGIAS_CORRECAO } from './tipos';
 
-test('lista de códigos de ocorrência bate com a spec §12 (18 códigos)', () => {
+test('lista de códigos de ocorrência bate com a spec §12 (19 códigos)', () => {
   expect(new Set(CODIGOS_OCORRENCIA)).toEqual(
     new Set([
       'ASSINATURA_PRESENTE',
@@ -12,6 +12,7 @@ test('lista de códigos de ocorrência bate com a spec §12 (18 códigos)', () =
       'MIDIA_NAO_REMUXAVEL',
       'ARQUIVO_CRIPTOGRAFADO',
       'ARQUIVO_CORROMPIDO',
+      'PDF_ASSINATURA_BLOQUEADA',
       'PDFA_NAO_DECLARADO',
       'PDFA_DECLARACAO_INCONSISTENTE',
       'PDFA_CRIPTOGRAFADO',
@@ -23,13 +24,14 @@ test('lista de códigos de ocorrência bate com a spec §12 (18 códigos)', () =
       'PDFA_REFERENCIA_EXTERNA',
     ]),
   );
-  expect(CODIGOS_OCORRENCIA).toHaveLength(18);
+  expect(CODIGOS_OCORRENCIA).toHaveLength(19);
 });
 
 test('estratégias de correção batem com a spec §12', () => {
   expect(new Set(ESTRATEGIAS_CORRECAO)).toEqual(
     new Set([
       'REMOVER_ASSINATURA',
+      'REMOVER_CRIPTOGRAFIA',
       'CONVERTER_PDFA',
       'COMPRIMIR_PDF',
       'RECODIFICAR_MIDIA',

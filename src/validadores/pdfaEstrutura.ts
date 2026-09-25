@@ -1,6 +1,7 @@
 import type { Ocorrencia, Gravidade } from '../tipos';
 import type { ContextoArquivo } from './contexto';
 import { varrerEstruturaPdfa } from '../pdf/estrutura';
+import { bloqueiaAssinatura } from './criptografia';
 
 /**
  * Regra 3 nível 2 — verificações estruturais (spec §7.3). Rodam sempre que for
@@ -31,7 +32,9 @@ export function validarPdfaEstrutura(ctx: ContextoArquivo): Ocorrencia[] {
     });
   };
 
-  if (ctx.pdf.trailer.temEncrypt) {
+  // Cifra que já bloqueia a assinatura vira PDF_ASSINATURA_BLOQUEADA (erro) em
+  // `criptografia.ts`; repetir aqui como aviso de PDF/A só duplicaria o recado.
+  if (ctx.pdf.trailer.temEncrypt && !bloqueiaAssinatura(ctx.pdf.cripto?.permissoes ?? null)) {
     add('PDFA_CRIPTOGRAFADO', 'O PDF está criptografado, o que impede a conformidade PDF/A.', 'trailer com /Encrypt');
   }
   if (!e.temOutputIntentPdfa) {

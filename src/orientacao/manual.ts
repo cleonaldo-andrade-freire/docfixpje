@@ -127,6 +127,21 @@ export function montarOrientacaoManual(ocorrencias: Ocorrencia[]): OrientacaoMan
     });
   }
 
+  if (codigos.has('PDF_ASSINATURA_BLOQUEADA')) {
+    out.push({
+      resumo: 'O PDF tem proteção que proíbe assiná-lo. Remova a proteção reimprimindo o arquivo:',
+      passos: [
+        {
+          titulo: 'Reimprima o PDF pelo navegador',
+          detalhe:
+            'Abra o arquivo no Chrome ou Firefox, use Ctrl+P e escolha "Salvar como PDF" / ' +
+            '"Microsoft Print to PDF". O arquivo gerado sai sem a proteção e o PJe consegue assinar. ' +
+            'O conteúdo e o código de autenticação impressos na página continuam valendo.',
+        },
+      ],
+    });
+  }
+
   if (codigos.has('ARQUIVO_CRIPTOGRAFADO')) {
     out.push({
       resumo: 'O arquivo está protegido por senha:',

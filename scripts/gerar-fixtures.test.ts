@@ -24,6 +24,8 @@ test('gera todas as fixtures esperadas', () => {
     'declara-a1b-sem-oi.pdf',
     'fonte-nao-embutida.pdf',
     'criptografado.pdf',
+    'criptografado-permissivo.pdf',
+    'criptografado-sem-assinar.pdf',
     'corrompido.pdf',
     'falso.pdf',
     'limite-exato.pdf',

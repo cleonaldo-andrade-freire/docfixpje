@@ -49,7 +49,24 @@ describe('spec §14.1', () => {
   test('PDF com /Encrypt que abre (restrições) -> NÃO é ARQUIVO_CRIPTOGRAFADO', async () => {
     const r = await val('criptografado.pdf');
     expect(cod(r)).not.toContain('ARQUIVO_CRIPTOGRAFADO');
-    // sem assinatura, só avisos de PDF/A -> apto
+    expect(r.corrigivel).toBe(true);
+  });
+
+  // O bug que motivou a Regra 1b: certidão de inteiro teor do ONR. Abria sem
+  // senha, passava como apta, e o PJe recusava na hora de assinar.
+  test('cifra que proíbe assinar -> PDF_ASSINATURA_BLOQUEADA, inapto e corrigível', async () => {
+    const r = await val('criptografado-sem-assinar.pdf');
+    expect(cod(r)).toContain('PDF_ASSINATURA_BLOQUEADA');
+    expect(r.apto).toBe(false);
+    expect(r.corrigivel).toBe(true);
+    // não repete o mesmo recado como aviso de PDF/A
+    expect(cod(r)).not.toContain('PDFA_CRIPTOGRAFADO');
+  });
+
+  test('cifra que não estorva a assinatura -> só o aviso de PDF/A, apto', async () => {
+    const r = await val('criptografado-permissivo.pdf');
+    expect(cod(r)).not.toContain('PDF_ASSINATURA_BLOQUEADA');
+    expect(cod(r)).toContain('PDFA_CRIPTOGRAFADO');
     expect(r.apto).toBe(true);
   });
 

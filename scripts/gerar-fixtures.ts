@@ -212,13 +212,22 @@ function pdfFonteNaoEmbutida(): Uint8Array {
   return b.build({ root: catalogo });
 }
 
-function pdfCriptografado(): Uint8Array {
+/**
+ * PDF com /Encrypt de restrições (abre sem senha).
+ *
+ * `p` são os bits de permissão da Tabela 22 da ISO 32000-1:
+ *  - -3904 nega tudo, inclusive as operações que uma assinatura faz;
+ *  - -4 libera tudo (só os bits 1-2, reservados, ficam zerados).
+ * O caso real do ONR (certidão de inteiro teor) usa -1340: libera impressão e
+ * nega alterar conteúdo, anotar, preencher formulário e montar o documento.
+ */
+function pdfCriptografado(p = -3904, texto = 'Documento ficticio protegido por senha.'): Uint8Array {
   const b = new PdfBuilder();
   const enc = b.reservar();
-  const { catalogo } = paginaBasica(b, { texto: 'Documento ficticio protegido por senha.' });
+  const { catalogo } = paginaBasica(b, { texto });
   b.colocar(
     enc,
-    `<< /Filter /Standard /V 2 /R 3 /Length 128 /P -3904 ` +
+    `<< /Filter /Standard /V 2 /R 3 /Length 128 /P ${p} ` +
       `/O <${'41'.repeat(32)}> /U <${'42'.repeat(32)}> >>`,
   );
   return b.build({
@@ -303,6 +312,10 @@ export async function gerarTodas(): Promise<Record<string, Uint8Array>> {
     'declara-a1b-sem-oi.pdf': pdfPdfa(1, 'B', { comOutputIntent: false }),
     'fonte-nao-embutida.pdf': pdfFonteNaoEmbutida(),
     'criptografado.pdf': pdfCriptografado(),
+    // cifra que NÃO estorva a assinatura: só atrapalha o PDF/A
+    'criptografado-permissivo.pdf': pdfCriptografado(-4, 'Documento ficticio cifrado, sem restricao de uso.'),
+    // caso real: certidão de inteiro teor do ONR — imprime, mas proíbe assinar
+    'criptografado-sem-assinar.pdf': pdfCriptografado(-1340, 'Certidao ficticia que proibe assinatura.'),
     'corrompido.pdf': pdfCorrompido(),
     'falso.pdf': arquivoFalso(),
     'limite-exato.pdf': pdfComTamanho(TAMANHO_MAX_BYTES, 'Fixture de fronteira: exatamente no limite.'),

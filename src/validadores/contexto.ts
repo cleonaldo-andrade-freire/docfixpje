@@ -1,6 +1,13 @@
 import type { TipoDetectado, ConformidadePdfa } from '../tipos';
 import { PDFA } from '../config/limites';
-import { carregarPdf, varrerTrailerBruto, type CargaPdf, type TrailerBruto } from '../pdf/estrutura';
+import {
+  carregarPdf,
+  varrerCriptografia,
+  varrerTrailerBruto,
+  type CargaPdf,
+  type CriptografiaPdf,
+  type TrailerBruto,
+} from '../pdf/estrutura';
 import { extrairXmp, lerPdfaId } from '../pdf/xmp';
 import { analisarMidia, type AnaliseMidia } from '../midia/remuxarMp4';
 
@@ -23,6 +30,8 @@ export const CONFIG_PADRAO: ConfigValidacao = {
 export interface ContextoPdf {
   carga: CargaPdf;
   trailer: TrailerBruto;
+  /** null quando o PDF não tem /Encrypt. */
+  cripto: CriptografiaPdf | null;
   xmp: string | null;
   pdfaId: { parte: number; conformidade: ConformidadePdfa } | null;
 }
@@ -59,9 +68,10 @@ export async function montarContexto(
   if (tipo === 'application/pdf') {
     const carga = await carregarPdf(bytes);
     const trailer = varrerTrailerBruto(bytes);
+    const cripto = trailer.temEncrypt ? varrerCriptografia(bytes) : null;
     const xmp = extrairXmp(bytes);
     const pdfaId = xmp ? lerPdfaId(xmp) : null;
-    pdf = { carga, trailer, xmp, pdfaId };
+    pdf = { carga, trailer, cripto, xmp, pdfaId };
   }
 
   const midia = ehVideo(tipo) ? analisarMidia(bytes) : null;
